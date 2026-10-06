@@ -109,19 +109,11 @@ def main() -> None:
     df = pd.DataFrame(rows)
     df.to_parquet(PROCESSED / "market_runs.parquet")
 
-    per_game = lambda d: d.groupby(
-        [
-            c
-            for c in (
-                "feed_delay",
-                "cs_threshold",
-                "latency",
-                "mm_audio_guard",  # noqa: E731
-                "mm_guard_threshold",
-            )
-            if c in d
-        ]
-    )
+    keys = ["feed_delay", "cs_threshold", "latency", "mm_audio_guard", "mm_guard_threshold"]
+
+    def per_game(d: pd.DataFrame):
+        return d.groupby(keys)
+
     agg_cols = [
         "cs_pnl",
         "mm_pnl",

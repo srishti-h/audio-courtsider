@@ -116,7 +116,7 @@ def main() -> None:
         exc = onsets(tr.excitement, tr.times, threshold=2.5)
         for g in goal_t:
 
-            def first_after(xs, lo=-2.0, hi=20.0):
+            def first_after(xs, lo=-2.0, hi=20.0, g=g):
                 d = [x - g for x in xs if lo <= x - g <= hi]
                 return min(d) if d else np.nan
 
