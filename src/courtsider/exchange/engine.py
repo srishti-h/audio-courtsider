@@ -120,9 +120,7 @@ class Account:
 
 
 class Exchange:
-    def __init__(
-        self, instruments: list[str], limits: RiskLimits | None = None, journal_path: Path | None = None
-    ):
+    def __init__(self, instruments: list[str], limits: RiskLimits | None = None, journal_path: Path | None = None):
         self.books = {i: OrderBook() for i in instruments}
         self.limits = limits or RiskLimits()
         self.accounts: dict[str, Account] = {}
@@ -205,9 +203,7 @@ class Exchange:
         return [Canceled(self.seq, m.account, m.oid), *self._deltas(m.instrument)]
 
     def _on_Reduce(self, m: Reduce, ts: float) -> list:
-        if self.owner.get((m.instrument, m.oid)) != m.account or not self.books[m.instrument].reduce(
-            m.oid, m.qty
-        ):
+        if self.owner.get((m.instrument, m.oid)) != m.account or not self.books[m.instrument].reduce(m.oid, m.qty):
             return self._reject(m.account, "cannot reduce")
         return self._deltas(m.instrument)
 
@@ -258,9 +254,7 @@ class Exchange:
         return h.hexdigest()
 
     @classmethod
-    def replay(
-        cls, instruments: list[str], journal: list[JournalEntry], limits: RiskLimits | None = None
-    ) -> Exchange:
+    def replay(cls, instruments: list[str], journal: list[JournalEntry], limits: RiskLimits | None = None) -> Exchange:
         ex = cls(instruments, limits)
         for e in journal:
             ex.process(e.msg, e.ts)

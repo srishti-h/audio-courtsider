@@ -90,9 +90,7 @@ ops = st.one_of(
         st.integers(1, 50),
         st.sampled_from([TIF.GTC, TIF.IOC]),
     ),
-    st.tuples(
-        st.just("cancel"), st.sampled_from(["a", "b", "c", "d"]), st.sampled_from(INSTR), st.integers(1, 200)
-    ),
+    st.tuples(st.just("cancel"), st.sampled_from(["a", "b", "c", "d"]), st.sampled_from(INSTR), st.integers(1, 200)),
     st.tuples(
         st.just("reduce"),
         st.sampled_from(["a", "b", "c", "d"]),
