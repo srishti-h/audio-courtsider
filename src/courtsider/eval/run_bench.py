@@ -1,8 +1,8 @@
 """Latency budget for the non-ASR stages: python -m courtsider.eval.run_bench [--skip-nlp]
 
-  * exchange: per-message processing latency and throughput under a realistic message mix
-  * text classifier: per-segment inference latency (batch of 1, i.e. streaming) on MPS/CPU
-  * acoustic features: compute time per second of audio
+* exchange: per-message processing latency and throughput under a realistic message mix
+* text classifier: per-segment inference latency (batch of 1, i.e. streaming) on MPS/CPU
+* acoustic features: compute time per second of audio
 """
 
 from __future__ import annotations
@@ -37,10 +37,15 @@ def bench_exchange(n: int = 200_000, seed: int = 0) -> dict:
             side = Side.BUY if rng.random() < 0.5 else Side.SELL
             aggressive = kinds[i] > 0.9
             mid = 50
-            px = int(mid + (3 if side is Side.BUY else -3)) if aggressive else int(
-                mid - side * rng.integers(1, 10))
-            msg = NewOrder(f"a{int(rng.integers(20))}", ins, int(side), px, int(rng.integers(1, 20)),
-                           int(TIF.IOC if aggressive else TIF.GTC))
+            px = int(mid + (3 if side is Side.BUY else -3)) if aggressive else int(mid - side * rng.integers(1, 10))
+            msg = NewOrder(
+                f"a{int(rng.integers(20))}",
+                ins,
+                int(side),
+                px,
+                int(rng.integers(1, 20)),
+                int(TIF.IOC if aggressive else TIF.GTC),
+            )
         t0 = time.perf_counter_ns()
         out = ex.process(msg)
         lat[i] = time.perf_counter_ns() - t0
@@ -49,8 +54,13 @@ def bench_exchange(n: int = 200_000, seed: int = 0) -> dict:
                 if type(e).__name__ == "Ack" and e.resting_qty:
                     live.append((msg.account, msg.instrument, e.oid))
     us = lat / 1000
-    return dict(messages=n, p50_us=float(np.percentile(us, 50)), p99_us=float(np.percentile(us, 99)),
-                p999_us=float(np.percentile(us, 99.9)), throughput_msgs_per_s=float(n / (lat.sum() / 1e9)))
+    return dict(
+        messages=n,
+        p50_us=float(np.percentile(us, 50)),
+        p99_us=float(np.percentile(us, 99)),
+        p999_us=float(np.percentile(us, 99.9)),
+        throughput_msgs_per_s=float(n / (lat.sum() / 1e9)),
+    )
 
 
 def bench_nlp(n: int = 200) -> dict:

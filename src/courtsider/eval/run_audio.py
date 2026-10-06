@@ -47,6 +47,43 @@ def pick_excerpts(games: pd.DataFrame, events: pd.DataFrame, n: int, seed: int =
     return out
 
 
+def end_to_end(clips: list[dict], streams: dict, teams: pd.DataFrame, threshold: float = 0.5) -> dict:
+    from courtsider.asr.segmenter import segments_from_words
+    from courtsider.paths import MODELS
+    from courtsider.text.models import TransformerModel
+
+    model = TransformerModel.load(MODELS / "text_extractor")
+    seg_lat, delays, n_goals, false_alarms, minutes_no_goal = [], [], 0, 0, 0.0
+    for ci, r in streams.items():
+        c = clips[ci]
+        gid = c["meta"]["game_id"]
+        seg = segments_from_words(r.words, gid, 1)
+        if seg.empty:
+            continue
+        seg_lat += list(seg.available - seg.end)
+        home, away = teams.loc[gid, "home"], teams.loc[gid, "away"]
+        texts = seg.text.tolist()
+        inputs = [f"{home} vs {away} | {' '.join(texts[max(0, i - 2) : i])} || {t}" for i, t in enumerate(texts)]
+        p_goal = model.predict(inputs)[0][:, 0]
+        fired = seg.available.to_numpy()[p_goal >= threshold]
+        goals = [e["t"] for e in c["meta"]["events"] if e["event"] == "goal"]
+        for g in goals:
+            n_goals += 1
+            d = fired[(fired >= g - 10) & (fired <= g + 30)] - g
+            if len(d):
+                delays.append(float(d.min()))
+        if not goals:
+            false_alarms += int((np.diff(np.concatenate([[-99.0], fired])) > 20).sum())
+            minutes_no_goal += c["meta"]["duration"] / 60
+    return dict(
+        segment_latency_p50=float(np.median(seg_lat)),
+        segment_latency_p90=float(np.percentile(seg_lat, 90)),
+        goal_recall=len(delays) / max(1, n_goals),
+        goal_detection_delay_p50=float(np.median(delays)) if delays else float("nan"),
+        false_alarms_per_min=false_alarms / max(1e-9, minutes_no_goal),
+    )
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--excerpts", type=int, default=16)
@@ -76,14 +113,17 @@ def main() -> None:
 
     # ---- ASR sweep ----------------------------------------------------------------------
     asr_rows = []
+    kept: dict[int, object] = {}  # turbo + name-bias stream results, reused for the end-to-end test
     for model in args.models.split(","):
         for bias in (False, True) if model in ("small", "turbo") else (False,):
             lat, wers, hits, tots, compute, audio_s = [], [], 0, 0, 0.0, 0.0
-            for c in clips:
+            for ci, c in enumerate(clips):
                 y, _ = sf.read(c["path"])
                 ref = " ".join(s["text"] for s in c["meta"]["script"])
                 t0 = time.perf_counter()
                 r = stream(y, model, vocabulary=c["names"] if bias else None)
+                if model == "turbo" and bias:
+                    kept[ci] = r
                 compute += time.perf_counter() - t0
                 audio_s += len(y) / 16000
                 lat += list(r.latencies())
@@ -146,19 +186,16 @@ def main() -> None:
         excitement_false_alarms_per_min=float(nogoal.excitement_false.sum() / max(1e-9, nogoal.minutes.sum())),
     )
 
-    # pipeline latency used downstream: chosen model = turbo with name bias if available
-    pick = (
-        asr[(asr.model == "turbo") & asr.name_bias]
-        if ((asr.model == "turbo") & asr.name_bias).any()
-        else asr.iloc[[-1]]
-    )
-    nlp_ms = 0.5  # measured text-classifier inference per segment on MPS, see README
-    pipeline = float(pick.latency_p50.iloc[0]) + nlp_ms / 1000
+    # ---- end to end: audio -> streaming ASR -> segments -> text model -> goal detection ----
+    e2e = end_to_end(clips, kept, teams) if kept else {}
+    # latency added downstream to Echoes segment ends = measured (segment available - segment end)
+    pipeline = e2e.get("segment_latency_p50", float(asr.latency_p50.iloc[-1]))
     report = dict(
         synthetic=True,
         n_clips=len(clips),
         asr=asr.round(4).to_dict(orient="records"),
         acoustic={k: round(v, 3) for k, v in acoustic.items()},
+        end_to_end={k: round(v, 3) for k, v in e2e.items()},
         pipeline_latency_s=round(pipeline, 3),
         pipeline_model="turbo+name_bias",
     )
