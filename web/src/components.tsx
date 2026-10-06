@@ -105,7 +105,7 @@ export function Books({ books, fair, trades }: {
 const MARK_ROWS: Record<string, number> = { truth: 0, cs_entry: 1, mm_guard: 1, feed: 2, cs_exit: 3 }
 const MARK_LABEL: Record<string, string> = { truth: 'pitch', cs_entry: 'courtsider', feed: 'official feed', cs_exit: 'exit' }
 
-export function Timeline({ markers, now, span = 60 }: { markers: MarkerMsg[]; now: number; span?: number }) {
+export function Timeline({ markers, now, span = 90 }: { markers: MarkerMsg[]; now: number; span?: number }) {
   const w = 760, h = 120, t0 = now - span
   const x = (t: number) => ((t - t0) / span) * w
   const visible = markers.filter((m) => m.t >= t0 && m.t <= now && m.kind in MARK_ROWS)

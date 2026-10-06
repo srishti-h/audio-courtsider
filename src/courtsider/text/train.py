@@ -56,7 +56,8 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--skip-transformer", action="store_true")
     ap.add_argument("--neg-frac", type=float, default=0.4, help="fraction of all-negative train segments kept")
-    ap.add_argument("--epochs", type=int, default=1)
+    ap.add_argument("--epochs", type=int, default=2)
+    ap.add_argument("--rare-oversample", type=int, default=6)
     args = ap.parse_args()
 
     df = load_labelled()
@@ -84,6 +85,9 @@ def main() -> None:
         any_pos = train[EVENT_TYPES].to_numpy().any(1) | (train.team != "unknown").to_numpy()
         keep = any_pos | (rng.random(len(train)) < args.neg_frac)
         tr = train[keep]
+        # oversample the rare, price-moving classes (penalty: ~150 events, red card: ~90 in total)
+        rare = (tr.penalty == 1) | (tr.red_card == 1)
+        tr = pd.concat([tr] + [tr[rare]] * args.rare_oversample).sample(frac=1, random_state=0)
         print(f"transformer train segments={len(tr)}")
         model = TransformerModel().fit(
             tr.input.tolist(), tr[EVENT_TYPES].to_numpy(), tr.team.to_numpy(), epochs=args.epochs

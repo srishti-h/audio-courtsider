@@ -75,7 +75,7 @@ export default function App() {
             <section className="col wide">
               <h2>Order books</h2>
               <Books books={state.books} fair={state.fair} trades={state.trades} />
-              <h2>Who knew first (last 60 s)</h2>
+              <h2>Who knew first (last 90 s)</h2>
               <Timeline markers={state.markers} now={state.now} />
             </section>
           </main>

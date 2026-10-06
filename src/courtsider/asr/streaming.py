@@ -58,7 +58,12 @@ def _hypothesis(audio: np.ndarray, offset: float, repo: str, prompt: str | None)
         path_or_hf_repo=repo,
         word_timestamps=True,
         language="en",
-        temperature=0.0,
+        # temperature fallback re-decodes when the output is too repetitive (compression ratio)
+        temperature=(0.0, 0.2, 0.4, 0.6),
+        compression_ratio_threshold=2.0,
+        logprob_threshold=-1.0,
+        no_speech_threshold=0.6,
+        hallucination_silence_threshold=1.0,
         condition_on_previous_text=False,
         initial_prompt=prompt,
         verbose=None,
@@ -67,6 +72,31 @@ def _hypothesis(audio: np.ndarray, offset: float, repo: str, prompt: str | None)
     for seg in res["segments"]:
         for w in seg.get("words", []):
             out.append(Word(w["word"], offset + float(w["start"]), offset + float(w["end"])))
+    return drop_repeats(out)
+
+
+def _strip_overlap(committed: list[Word], new: list[Word], max_n: int = 6) -> list[Word]:
+    """Drop leading words of `new` that repeat the end of `committed` (timestamps drift between passes)."""
+    tail = [w.norm for w in committed[-max_n:]]
+    for n in range(min(max_n, len(tail), len(new)), 0, -1):
+        if [w.norm for w in new[:n]] == tail[-n:]:
+            return new[n:]
+    return new
+
+
+def drop_repeats(words: list[Word], max_ngram: int = 4, max_repeats: int = 2) -> list[Word]:
+    """Remove Whisper's looping hallucinations: an n-gram repeated back-to-back more than `max_repeats` times."""
+    out: list[Word] = []
+    for w in words:
+        out.append(w)
+        for n in range(1, max_ngram + 1):
+            k = n * (max_repeats + 1)
+            if len(out) >= k:
+                tail = [x.norm for x in out[-k:]]
+                chunks = [tuple(tail[i : i + n]) for i in range(0, k, n)]
+                if all(c == chunks[0] for c in chunks):
+                    del out[-n:]
+                    break
     return out
 
 
@@ -89,15 +119,15 @@ def stream(
     while True:
         t_avail = min(clock, dur)
         audio = y[int(buf_start * SR) : int(t_avail * SR)].astype(np.float32)
-        tail = " ".join(w.text.strip() for w in committed[-20:])
+        tail = " ".join(w.text.strip() for w in committed[-8:])
         prompt = " ".join(p for p in (base_prompt, tail) if p) or None
         t0 = time.perf_counter()
         hyp = _hypothesis(audio, buf_start, repo, prompt) if len(audio) > SR * 0.3 else []
         compute = time.perf_counter() - t0
         result.compute_times.append(compute)
         last_end = committed[-1].end if committed else 0.0
-        new = [w for w in hyp if w.start >= last_end - 0.05]
-        old = [w for w in prev if w.start >= last_end - 0.05]
+        new = _strip_overlap(committed, [w for w in hyp if w.start >= last_end - 0.05])
+        old = _strip_overlap(committed, [w for w in prev if w.start >= last_end - 0.05])
         agreed = []
         for a, b in zip(new, old, strict=False):
             if a.norm != b.norm or not a.norm:

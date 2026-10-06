@@ -14,7 +14,7 @@ import pandas as pd
 
 from courtsider.data.taxonomy import EVENT_TYPES
 
-LOOKBACK = 15.0
+LOOKBACK = 6.0  # positives sit close to the event, where commentary actually describes it
 LOOKAHEAD = {
     "goal": 8.0,
     "shot": 8.0,

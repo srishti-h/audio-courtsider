@@ -13,3 +13,4 @@ web/dist/
 *.mkv
 *.mp4
 .DS_Store
+.claude/
