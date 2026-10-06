@@ -77,6 +77,9 @@ def _methods(fit_df: pd.DataFrame, y_fit: np.ndarray, baselines: dict[str, pd.Da
     """Fit every candidate on `fit_df` (a validation subset). Returns name -> transform(df)."""
     out = {}
     for name, df in baselines.items():
+        if name == "keywords":  # binary rule output: evaluate as-is (a match is a detection)
+            out[name] = lambda d, src=df: src.loc[d.index, P_COLS].to_numpy()
+            continue
         cal_b = Calibrator().fit(df.loc[fit_df.index, P_COLS].to_numpy(), y_fit)
         out[name] = lambda d, cal_b=cal_b, src=df: cal_b.transform(src.loc[d.index, P_COLS].to_numpy())
     cal = Calibrator().fit(fit_df[P_COLS].to_numpy(), y_fit)

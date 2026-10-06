@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { MarkerMsg, PnlMsg, SignalMsg, TradeMsg, Level } from './types'
 import { CONTRACTS } from './types'
 
@@ -103,42 +103,74 @@ export function Books({ books, fair, trades }: {
 }
 
 const MARK_ROWS: Record<string, number> = { truth: 0, cs_entry: 1, mm_guard: 1, feed: 2, cs_exit: 3 }
-const MARK_LABEL: Record<string, string> = { truth: 'pitch', cs_entry: 'courtsider', feed: 'official feed', cs_exit: 'exit' }
+const MARK_LABEL: Record<string, string> = { truth: 'pitch', cs_entry: 'courtsider', feed: 'official feed', cs_exit: 'courtsider exit' }
+const ROW_H = 40
 
 export function Timeline({ markers, now, span = 90 }: { markers: MarkerMsg[]; now: number; span?: number }) {
-  const w = 760, h = 120, t0 = now - span
+  const w = 600, lw = 130, h = 4 * ROW_H + 40, t0 = now - span
   const x = (t: number) => ((t - t0) / span) * w
+  const y = (k: string) => 44 + MARK_ROWS[k] * ROW_H
   const visible = markers.filter((m) => m.t >= t0 && m.t <= now && m.kind in MARK_ROWS)
   const truth = visible.filter((m) => m.kind === 'truth')
   return (
     <div className="panel timeline">
-      <svg width="100%" viewBox={`0 0 ${w + 110} ${h}`}>
+      <svg width="100%" viewBox={`0 0 ${w + lw + 50} ${h}`}>
         {Object.entries(MARK_LABEL).map(([k, label]) => (
-          <text key={k} x={0} y={18 + MARK_ROWS[k] * 26} className="row-label">{label}</text>
+          <text key={k} x={0} y={y(k) + 5} className="row-label">{label}</text>
         ))}
-        <g transform="translate(110,0)">
-          {[0, 1, 2, 3].map((r) => <line key={r} x1={0} x2={w} y1={14 + r * 26} y2={14 + r * 26} className="row" />)}
-          {truth.map((m) => (
-            <line key={`v${m.t}`} x1={x(m.t)} x2={x(m.t)} y1={4} y2={h - 10} className="truth-line" />
+        <g transform={`translate(${lw},0)`}>
+          {Object.keys(MARK_LABEL).map((k) => <line key={k} x1={0} x2={w} y1={y(k)} y2={y(k)} className="row" />)}
+          {[0, 30, 60, 90].map((s) => (
+            <text key={s} x={x(now - s)} y={h - 2} className="tick">{s ? `-${s}s` : 'now'}</text>
           ))}
-          {visible.map((m, i) => (
-            <g key={i} transform={`translate(${x(m.t)},${14 + MARK_ROWS[m.kind] * 26})`}>
-              <circle r={6} className={`mk ${m.kind}`} />
-              {m.event && <text y={-9} className="mk-label">{m.event}{m.team ? ` (${m.team})` : ''}</text>}
+          {truth.map((m, i) => (
+            <g key={`v${m.t}`}>
+              <line x1={x(m.t)} x2={x(m.t)} y1={i % 2 ? 26 : 12} y2={h - 18} className="truth-line" />
+              <text x={x(m.t)} y={i % 2 ? 28 : 13} className="mk-label">{m.event}{m.team ? ` · ${m.team}` : ''}</text>
             </g>
           ))}
-          {truth.map((m) => {
+          {visible.map((m, i) => (
+            <circle key={i} cx={x(m.t)} cy={y(m.kind)} r={7} className={`mk ${m.kind}`} />
+          ))}
+          {truth.filter((m, i) => !truth.slice(0, i).some((o) => m.t - o.t < 3)).map((m) => {
             const feed = visible.find((f) => f.kind === 'feed' && f.event === m.event && f.t >= m.t)
             const entry = visible.find((f) => f.kind === 'cs_entry' && Math.abs(f.t - m.t) < 30)
             return (
               <g key={`gap${m.t}`}>
-                {feed && <text x={x(feed.t) + 8} y={14 + 2 * 26 + 4} className="gap">+{(feed.t - m.t).toFixed(1)}s</text>}
-                {entry && <text x={x(entry.t) + 8} y={14 + 26 + 4} className="gap cs">+{(entry.t - m.t).toFixed(1)}s</text>}
+                {feed && <text x={x(feed.t) + 11} y={y('feed') + 5} className="gap">+{(feed.t - m.t).toFixed(1)}s</text>}
+                {entry && <text x={x(entry.t) + 11} y={y('cs_entry') + 5} className="gap cs">+{(entry.t - m.t).toFixed(1)}s</text>}
               </g>
             )
           })}
         </g>
       </svg>
+    </div>
+  )
+}
+
+export function ResultsPanel() {
+  const [r, setR] = useState<any>(null)
+  useEffect(() => { fetch('/api/results').then((x) => x.json()).then(setR).catch(() => setR(null)) }, [])
+  if (!r?.market) return null
+  const paired = r.market.paired_dollars_per_match ?? {}
+  const gains = Object.entries(paired).filter(([k]) => k.startsWith('cs_gain')) as [string, any][]
+  const goal = (r.text_eval?.detection_test ?? []).find((d: any) => d.event === 'goal' && d.method === r.text_eval.fusion_selected)
+  return (
+    <div className="panel results">
+      <div className="kpis">
+        {goal && <div><b>{Math.round(goal.precision * 100)}% / {Math.round(goal.recall * 100)}%</b><span>goal precision / recall from commentary text (test)</span></div>}
+        {goal && <div><b>{goal.delay_p50.toFixed(1)} s</b><span>median detection after the goal, incl. ASR latency</span></div>}
+        {r.asr && <div><b>{r.asr.pipeline_latency_s.toFixed(2)} s</b><span>speech → text segment ({r.asr.pipeline_model}, synthetic audio)</span></div>}
+        {r.bench && <div><b>{r.bench.exchange.p50_us.toFixed(1)} µs</b><span>exchange matching latency p50 (Python)</span></div>}
+      </div>
+      <table>
+        <thead><tr><th>market's feed delay</th><th>courtsider gain vs a 1 s feed ($ / match, paired)</th></tr></thead>
+        <tbody>
+          {gains.map(([k, v]) => (
+            <tr key={k}><td>{k.match(/feed_([\d.]+)s/)?.[1]} s</td><td>{v.mean >= 0 ? '+' : ''}{v.mean.toFixed(2)} ± {v.sem.toFixed(2)}</td></tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }

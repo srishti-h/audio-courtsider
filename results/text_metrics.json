@@ -1,129 +1,129 @@
 {
   "keywords": {
     "goal": {
-      "avg_precision": 0.0229,
-      "roc_auc": 0.552,
-      "positives": 2182
+      "avg_precision": 0.0151,
+      "roc_auc": 0.5507,
+      "positives": 1453
     },
     "shot": {
-      "avg_precision": 0.12,
-      "roc_auc": 0.5203,
-      "positives": 14787
+      "avg_precision": 0.0836,
+      "roc_auc": 0.5236,
+      "positives": 9933
     },
     "corner": {
-      "avg_precision": 0.0766,
-      "roc_auc": 0.5315,
-      "positives": 7221
+      "avg_precision": 0.0649,
+      "roc_auc": 0.5405,
+      "positives": 5076
     },
     "yellow_card": {
-      "avg_precision": 0.0591,
-      "roc_auc": 0.5478,
-      "positives": 2900
+      "avg_precision": 0.0473,
+      "roc_auc": 0.5542,
+      "positives": 1945
     },
     "red_card": {
-      "avg_precision": 0.0053,
-      "roc_auc": 0.5238,
-      "positives": 166
+      "avg_precision": 0.0032,
+      "roc_auc": 0.5228,
+      "positives": 108
     },
     "penalty": {
-      "avg_precision": 0.0039,
-      "roc_auc": 0.5369,
-      "positives": 296
+      "avg_precision": 0.0026,
+      "roc_auc": 0.5357,
+      "positives": 203
     },
     "offside": {
-      "avg_precision": 0.0524,
-      "roc_auc": 0.5412,
-      "positives": 2809
+      "avg_precision": 0.0418,
+      "roc_auc": 0.5474,
+      "positives": 1857
     },
     "substitution": {
-      "avg_precision": 0.0338,
-      "roc_auc": 0.5077,
-      "positives": 4120
+      "avg_precision": 0.0252,
+      "roc_auc": 0.5095,
+      "positives": 2913
     }
   },
   "tfidf_lr": {
     "goal": {
-      "avg_precision": 0.0777,
-      "roc_auc": 0.6888,
-      "positives": 2182
+      "avg_precision": 0.0401,
+      "roc_auc": 0.688,
+      "positives": 1453
     },
     "shot": {
-      "avg_precision": 0.2116,
-      "roc_auc": 0.6438,
-      "positives": 14787
+      "avg_precision": 0.1538,
+      "roc_auc": 0.6414,
+      "positives": 9933
     },
     "corner": {
-      "avg_precision": 0.1786,
-      "roc_auc": 0.6647,
-      "positives": 7221
+      "avg_precision": 0.156,
+      "roc_auc": 0.6857,
+      "positives": 5076
     },
     "yellow_card": {
-      "avg_precision": 0.1362,
-      "roc_auc": 0.6871,
-      "positives": 2900
+      "avg_precision": 0.0957,
+      "roc_auc": 0.676,
+      "positives": 1945
     },
     "red_card": {
-      "avg_precision": 0.0251,
-      "roc_auc": 0.6416,
-      "positives": 166
+      "avg_precision": 0.0108,
+      "roc_auc": 0.6144,
+      "positives": 108
     },
     "penalty": {
-      "avg_precision": 0.0172,
-      "roc_auc": 0.806,
-      "positives": 296
+      "avg_precision": 0.0022,
+      "roc_auc": 0.5964,
+      "positives": 203
     },
     "offside": {
-      "avg_precision": 0.1009,
-      "roc_auc": 0.598,
-      "positives": 2809
+      "avg_precision": 0.0638,
+      "roc_auc": 0.5765,
+      "positives": 1857
     },
     "substitution": {
-      "avg_precision": 0.1367,
-      "roc_auc": 0.7211,
-      "positives": 4120
+      "avg_precision": 0.1212,
+      "roc_auc": 0.7259,
+      "positives": 2913
     }
   },
   "distilroberta": {
     "goal": {
-      "avg_precision": 0.1125,
-      "roc_auc": 0.7235,
-      "positives": 2182
+      "avg_precision": 0.0799,
+      "roc_auc": 0.6953,
+      "positives": 1453
     },
     "shot": {
-      "avg_precision": 0.237,
-      "roc_auc": 0.6737,
-      "positives": 14787
+      "avg_precision": 0.2099,
+      "roc_auc": 0.691,
+      "positives": 9933
     },
     "corner": {
-      "avg_precision": 0.2185,
-      "roc_auc": 0.6992,
-      "positives": 7221
+      "avg_precision": 0.2124,
+      "roc_auc": 0.7212,
+      "positives": 5076
     },
     "yellow_card": {
-      "avg_precision": 0.2012,
-      "roc_auc": 0.7543,
-      "positives": 2900
+      "avg_precision": 0.1529,
+      "roc_auc": 0.7218,
+      "positives": 1945
     },
     "red_card": {
-      "avg_precision": 0.0167,
-      "roc_auc": 0.7545,
-      "positives": 166
+      "avg_precision": 0.012,
+      "roc_auc": 0.8131,
+      "positives": 108
     },
     "penalty": {
-      "avg_precision": 0.0228,
-      "roc_auc": 0.7801,
-      "positives": 296
+      "avg_precision": 0.0184,
+      "roc_auc": 0.7461,
+      "positives": 203
     },
     "offside": {
-      "avg_precision": 0.1364,
-      "roc_auc": 0.6241,
-      "positives": 2809
+      "avg_precision": 0.1216,
+      "roc_auc": 0.6304,
+      "positives": 1857
     },
     "substitution": {
-      "avg_precision": 0.2098,
-      "roc_auc": 0.7547,
-      "positives": 4120
+      "avg_precision": 0.1898,
+      "roc_auc": 0.7824,
+      "positives": 2913
     },
-    "team_accuracy": 0.5926
+    "team_accuracy": 0.5415
   }
 }

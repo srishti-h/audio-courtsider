@@ -88,6 +88,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--excerpts", type=int, default=16)
     ap.add_argument("--models", default="tiny,base,small,turbo")
+    ap.add_argument("--e2e-only", action="store_true", help="reuse results/asr.json; recompute end-to-end only")
     args = ap.parse_args()
     FIG.mkdir(exist_ok=True)
     games = pd.read_parquet(PROCESSED / "games.parquet")
@@ -113,17 +114,15 @@ def main() -> None:
 
     # ---- ASR sweep ----------------------------------------------------------------------
     asr_rows = []
-    kept: dict[int, object] = {}  # turbo + name-bias stream results, reused for the end-to-end test
-    for model in args.models.split(","):
+    prev = json.loads((RESULTS / "asr.json").read_text()) if args.e2e_only else None
+    for model in [] if args.e2e_only else args.models.split(","):
         for bias in (False, True) if model in ("small", "turbo") else (False,):
             lat, wers, hits, tots, compute, audio_s = [], [], 0, 0, 0.0, 0.0
-            for ci, c in enumerate(clips):
+            for c in clips:
                 y, _ = sf.read(c["path"])
                 ref = " ".join(s["text"] for s in c["meta"]["script"])
                 t0 = time.perf_counter()
                 r = stream(y, model, vocabulary=c["names"] if bias else None)
-                if model == "turbo" and bias:
-                    kept[ci] = r
                 compute += time.perf_counter() - t0
                 audio_s += len(y) / 16000
                 lat += list(r.latencies())
@@ -143,7 +142,10 @@ def main() -> None:
             )
             asr_rows.append(row)
             print({k: round(v, 3) if isinstance(v, float) else v for k, v in row.items()}, flush=True)
-    asr = pd.DataFrame(asr_rows)
+    asr = pd.DataFrame(prev["asr"]) if prev else pd.DataFrame(asr_rows)
+    # operating point for the pipeline: lowest WER among name-biased configurations
+    best = asr[asr.name_bias].sort_values("wer").iloc[0]
+    print(f"pipeline model: {best.model} + name bias (WER {best.wer:.3f})")
 
     # ---- acoustic lead over transcript ----------------------------------------------------
     ac_rows = []
@@ -187,7 +189,8 @@ def main() -> None:
     )
 
     # ---- end to end: audio -> streaming ASR -> segments -> text model -> goal detection ----
-    e2e = end_to_end(clips, kept, teams) if kept else {}
+    kept = {ci: stream(sf.read(c["path"])[0], best.model, vocabulary=c["names"]) for ci, c in enumerate(clips)}
+    e2e = end_to_end(clips, kept, teams)
     # latency added downstream to Echoes segment ends = measured (segment available - segment end)
     pipeline = e2e.get("segment_latency_p50", float(asr.latency_p50.iloc[-1]))
     report = dict(
@@ -197,7 +200,7 @@ def main() -> None:
         acoustic={k: round(v, 3) for k, v in acoustic.items()},
         end_to_end={k: round(v, 3) for k, v in e2e.items()},
         pipeline_latency_s=round(pipeline, 3),
-        pipeline_model="turbo+name_bias",
+        pipeline_model=f"{best.model}+name_bias",
     )
     (RESULTS / "asr.json").write_text(json.dumps(report, indent=2))
 

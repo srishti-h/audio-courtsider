@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Books, fmtClock, Meters, PnlChart, Timeline, Transcript } from './components'
+import { Books, fmtClock, Meters, PnlChart, ResultsPanel, Timeline, Transcript } from './components'
 import type { Game, ReplayParams } from './types'
 import { useReplay } from './useReplay'
 
@@ -7,8 +7,8 @@ export default function App() {
   const [games, setGames] = useState<Game[]>([])
   const [gameId, setGameId] = useState('')
   const [speed, setSpeed] = useState(5)
-  const [feedDelay, setFeedDelay] = useState(2)
-  const [threshold, setThreshold] = useState(0.5)
+  const [feedDelay, setFeedDelay] = useState(8)
+  const [threshold, setThreshold] = useState(0.2)
   const [guard, setGuard] = useState(false)
   const [params, setParams] = useState<ReplayParams | null>(null)
   const state = useReplay(params)
@@ -16,8 +16,22 @@ export default function App() {
   useEffect(() => {
     fetch('/api/games').then((r) => r.json()).then((g: Game[]) => {
       setGames(g)
-      const withGoals = g.find((x) => x.goals.length >= 2) ?? g[0]
-      if (withGoals) setGameId(withGoals.game_id)
+      // shareable links: ?game=<id>&start=<s>&speed=&feed_delay=&threshold=&autoplay=1
+      const q = new URLSearchParams(location.search)
+      const fromUrl = q.get('game')
+      const initial = g.find((x) => x.game_id === fromUrl) ?? g.find((x) => x.goals.length >= 2) ?? g[0]
+      if (!initial) return
+      setGameId(initial.game_id)
+      if (q.get('autoplay')) {
+        setParams({
+          game_id: initial.game_id,
+          speed: Number(q.get('speed') ?? 5),
+          feed_delay: Number(q.get('feed_delay') ?? 8),
+          cs_threshold: Number(q.get('threshold') ?? 0.2),
+          mm_audio_guard: q.get('guard') === '1',
+          start: Number(q.get('start') ?? 0),
+        })
+      }
     })
   }, [])
 
@@ -77,6 +91,8 @@ export default function App() {
               <Books books={state.books} fair={state.fair} trades={state.trades} />
               <h2>Who knew first (last 90 s)</h2>
               <Timeline markers={state.markers} now={state.now} />
+              <h2>Experiment results</h2>
+              <ResultsPanel />
             </section>
           </main>
         </>

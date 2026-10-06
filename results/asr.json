@@ -1,0 +1,84 @@
+{
+  "synthetic": true,
+  "n_clips": 16,
+  "asr": [
+    {
+      "model": "tiny",
+      "name_bias": false,
+      "wer": 0.6473,
+      "name_recall": 0.2667,
+      "latency_p50": 1.7813,
+      "latency_p90": 5.1978,
+      "latency_p99": 9.5124,
+      "real_time_factor": 0.0763
+    },
+    {
+      "model": "base",
+      "name_bias": false,
+      "wer": 0.5889,
+      "name_recall": 0.2762,
+      "latency_p50": 1.9047,
+      "latency_p90": 4.9431,
+      "latency_p99": 8.4764,
+      "real_time_factor": 0.1494
+    },
+    {
+      "model": "small",
+      "name_bias": false,
+      "wer": 0.321,
+      "name_recall": 0.3667,
+      "latency_p50": 2.4,
+      "latency_p90": 4.5904,
+      "latency_p99": 7.2195,
+      "real_time_factor": 0.2241
+    },
+    {
+      "model": "small",
+      "name_bias": true,
+      "wer": 0.2461,
+      "name_recall": 0.7286,
+      "latency_p50": 2.1454,
+      "latency_p90": 4.8138,
+      "latency_p99": 9.3447,
+      "real_time_factor": 0.2037
+    },
+    {
+      "model": "turbo",
+      "name_bias": false,
+      "wer": 0.4624,
+      "name_recall": 0.5095,
+      "latency_p50": 2.4884,
+      "latency_p90": 8.8714,
+      "latency_p99": 21.6424,
+      "real_time_factor": 0.6959
+    },
+    {
+      "model": "turbo",
+      "name_bias": true,
+      "wer": 0.436,
+      "name_recall": 0.7333,
+      "latency_p50": 2.5471,
+      "latency_p90": 8.3484,
+      "latency_p99": 15.3006,
+      "real_time_factor": 0.7886
+    }
+  ],
+  "acoustic": {
+    "n_goal_clips": 9,
+    "roar_recall": 0.333,
+    "roar_delay_p50": 0.544,
+    "excitement_recall": 0.444,
+    "excitement_delay_p50": 3.774,
+    "roar_false_alarms_per_min": 1.0,
+    "excitement_false_alarms_per_min": 2.0
+  },
+  "end_to_end": {
+    "segment_latency_p50": 1.833,
+    "segment_latency_p90": 5.552,
+    "goal_recall": 0.25,
+    "goal_detection_delay_p50": 6.199,
+    "false_alarms_per_min": 0.083
+  },
+  "pipeline_latency_s": 1.833,
+  "pipeline_model": "small+name_bias"
+}

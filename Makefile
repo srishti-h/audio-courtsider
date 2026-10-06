@@ -1,4 +1,4 @@
-.PHONY: setup data train eval bench test serve web lint
+.PHONY: setup data train eval bench test serve web lint screenshot
 
 setup:            ## install Python + web dependencies
 	uv sync
@@ -28,3 +28,6 @@ serve:            ## API on :8000 (also serves web/dist if built)
 
 web:              ## dev server on :5173 proxying to the API
 	cd web && npm run dev
+
+screenshot:       ## README dashboard image (needs serve + web running, Google Chrome)
+	uv run python scripts/screenshot.py

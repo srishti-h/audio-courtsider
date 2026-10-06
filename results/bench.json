@@ -1,12 +1,16 @@
 {
   "exchange": {
     "messages": 200000,
-    "p50_us": 2.417,
-    "p99_us": 9.167,
-    "p999_us": 27.916084000001547,
-    "throughput_msgs_per_s": 296293.48655613716
+    "p50_us": 2.292,
+    "p99_us": 7.834,
+    "p999_us": 19.83304200000077,
+    "throughput_msgs_per_s": 351611.81307606463
   },
   "acoustic": {
-    "ms_per_audio_second": 18.99471424112562
+    "ms_per_audio_second": 10.854997224911736
+  },
+  "text_classifier": {
+    "p50_ms": 3.3928335760720074,
+    "p99_ms": 7.535336117725803
   }
 }
