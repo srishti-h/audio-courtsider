@@ -1,0 +1,55 @@
+[project]
+name = "courtsider"
+version = "0.1.0"
+description = "Detect soccer events from live commentary audio and race the official data feed on a simulated in-play exchange."
+readme = "README.md"
+authors = [
+    { name = "srishti-h", email = "hazra.srishti@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "accelerate>=1.15.0",
+    "fastapi>=0.142.2",
+    "huggingface-hub>=1.33.0",
+    "librosa>=1.0.0",
+    "matplotlib>=3.11.2",
+    "mlx-whisper>=0.4.3",
+    "msgspec>=0.22.0",
+    "numpy>=2.5.3",
+    "pandas>=3.0.6",
+    "pyarrow>=25.0.1",
+    "rapidfuzz>=3.14.6",
+    "requests>=2.34.2",
+    "scikit-learn>=1.9.1",
+    "scipy>=1.18.1",
+    "soccernet>=0.2.0",
+    "sortedcontainers>=2.4.0",
+    "soundfile>=0.14.0",
+    "torch>=2.14.1",
+    "tqdm>=4.70.1",
+    "transformers>=5.18.0",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.23,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "hypothesis>=6.168.5",
+    "pytest>=9.1.1",
+    "pytest-benchmark>=5.3.0",
+    "ruff>=0.16.10",
+]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
