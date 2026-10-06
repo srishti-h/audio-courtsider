@@ -1,9 +1,8 @@
 """Real broadcast audio (requires SoccerNet NDA access): python -m courtsider.eval.run_real_audio --games 5
 
-Download the low-res videos first (password from the SoccerNet NDA):
-    from SoccerNet.Downloader import SoccerNetDownloader
-    d = SoccerNetDownloader(LocalDirectory="data/raw/soccernet"); d.password = "<NDA password>"
-    d.downloadGames(files=["1_224p.mkv", "2_224p.mkv"], split=["test"])
+Access: request it on https://huggingface.co/datasets/SoccerNet/SoccerNet_raw_HQ (gated; the old
+NDA password form is retired), then `hf auth login`. Download only the 224p halves of a few test
+matches into data/raw/soccernet/<game_id>/{1,2}_224p.mkv (the full 224p branch is 182 GB).
 
 For each half: extract 16 kHz audio, stream it through Whisper (turbo, team-sheet biasing), score
 segments with the text model, run the crowd/excitement detectors, and measure how long after each
