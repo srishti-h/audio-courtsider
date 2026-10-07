@@ -1,0 +1,24 @@
+{
+  "real_audio": true,
+  "whisper": "small+name_bias",
+  "n_games": 5,
+  "n_goals": 30,
+  "audio_minutes": 457.8,
+  "text_goal_recall": 0.267,
+  "text_goal_delay_p50": 6.66,
+  "text_false_alarms_per_min": 0.048,
+  "roar_goal_recall": 0.233,
+  "roar_goal_delay_p50": 0.64,
+  "roar_false_alarms_per_min": 0.216,
+  "text_or_roar_goal_recall": 0.433,
+  "word_latency_p50": 2.78,
+  "segment_latency_p50": 2.37,
+  "real_time_factor": 0.389,
+  "games": [
+    "england_epl/2015-2016/2015-08-23 - 15-30 West Brom 2 - 3 Chelsea",
+    "england_epl/2015-2016/2015-09-20 - 18-00 Southampton 2 - 3 Manchester United",
+    "england_epl/2016-2017/2016-09-24 - 14-30 Manchester United 4 - 1 Leicester",
+    "europe_uefa-champions-league/2014-2015/2015-03-10 - 22-45 Real Madrid 3 - 4 Schalke",
+    "spain_laliga/2014-2015/2015-05-02 - 17-00 Cordoba 0 - 8 Barcelona"
+  ]
+}

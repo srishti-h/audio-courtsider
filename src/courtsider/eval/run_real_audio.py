@@ -88,6 +88,12 @@ def main() -> None:
             download(g.game_id)
         names = mine_names(segs[segs.game_id == g.game_id].text.tolist(), (g.home, g.away))
         for half in (1, 2):
+            cache = PROCESSED / "real_audio" / f"{g.Index}_{half}.json"
+            if cache.exists():  # resumable: each half is saved as soon as it finishes
+                saved = json.loads(cache.read_text())
+                goal_rows += saved["goals"]
+                half_rows.append(saved["half"])
+                continue
             video = SOCCERNET_DIR / g.game_id / f"{half}_224p.mkv"
             if not video.exists():
                 print(f"missing {video}; run with --download")
@@ -120,6 +126,7 @@ def main() -> None:
                         roar_delay=first_in_window(roar, t),
                     )
                 )
+            n_goal_rows = len(goals)
             lat = r.latencies()
             half_rows.append(
                 dict(
@@ -134,8 +141,15 @@ def main() -> None:
                     rtf=float(np.sum(r.compute_times) / (len(y) / 16000)),
                 )
             )
+            cache.parent.mkdir(parents=True, exist_ok=True)
+            cache.write_text(json.dumps(dict(goals=goal_rows[len(goal_rows) - n_goal_rows :], half=half_rows[-1])))
             print(half_rows[-1], flush=True)
     gd, hd = pd.DataFrame(goal_rows), pd.DataFrame(half_rows)
+    # SoccerNet sometimes labels one goal twice a fraction of a second apart: merge within 5 s
+    gd = gd.sort_values(["game_id", "half", "t"])
+    dup = (gd.game_id == gd.game_id.shift()) & (gd.half == gd.half.shift()) & (gd.t - gd.t.shift() < 5)
+    gd = gd[~dup.to_numpy()]
+    either = gd[["text_delay", "roar_delay"]].min(axis=1)
     mins = hd.minutes.sum()
     report = dict(
         real_audio=True,
@@ -149,6 +163,7 @@ def main() -> None:
         roar_goal_recall=round(float(gd.roar_delay.notna().mean()), 3),
         roar_goal_delay_p50=round(float(gd.roar_delay.median()), 2),
         roar_false_alarms_per_min=round(float(hd.roar_false_alarms.sum() / mins), 3),
+        text_or_roar_goal_recall=round(float(either.notna().mean()), 3),
         word_latency_p50=round(float(hd.word_latency_p50.median()), 2),
         segment_latency_p50=round(float(hd.segment_latency_p50.median()), 2),
         real_time_factor=round(float(hd.rtf.mean()), 3),

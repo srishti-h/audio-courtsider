@@ -67,7 +67,22 @@ real time, so its lag spikes (p99 15 s); `small` + biasing is the operating poin
 onsets, when they fire, land 0.5 s after the goal vs ~4.6 s for the transcript path (33 % recall,
 synthetic crowd).
 
-**5. Pricing and plumbing.** Dixon–Coles fit only on earlier matches gets a 1X2 log loss of 0.989
+**5. On real broadcast audio, end to end** (5 test matches with English commentary, 458 min,
+30 goals; SoccerNet videos under NDA, streamed through Whisper `small` + name biasing, the text
+model and the crowd detector):
+
+| signal | goals caught | median time after the goal | false alarms |
+|---|---|---|---|
+| commentary text (P ≥ 0.5) | 27 % | 6.7 s | 0.05 / min (≈ 4 per match) |
+| crowd roar (CUSUM) | 23 % | **0.6 s** | 0.22 / min (≈ 19 per match) |
+| either | 43 % | | |
+
+Live speech-to-text on broadcast audio delivers a commentary segment 2.4 s after it is spoken at
+0.39× real time. The text path's timing on real audio (27 % at 6.7 s) matches the transcript-based
+estimate above (25 % at 6.1 s), which supports the offline methodology; the crowd reacts an order
+of magnitude faster than the words, but is noisy on its own.
+
+**6. Pricing and plumbing.** Dixon–Coles fit only on earlier matches gets a 1X2 log loss of 0.989
 on 5,478 matches, closing 73 % of the gap between base rates (1.063) and Pinnacle closing odds
 (0.962); in-play Brier falls from 0.50 at kick-off to 0.14 at 85'. The pure-Python matching
 engine handles 350 k msgs/s (p50 2.3 µs, p99 7.8 µs); the text classifier scores a segment in
@@ -105,9 +120,9 @@ engine handles 350 k msgs/s (p50 2.3 µs, p99 7.8 µs); the text classifier scor
   labels. Every lead-time number therefore adds (a) the streaming latency measured on audio and
   (b) a conservative margin estimated on training matches so the courtsider is almost never
   credited with hearing a goal before it happened.
-* **Audio results are synthetic until the SoccerNet NDA is granted.** The speech, crowd and
-  excitement numbers come from real commentary text re-voiced with macOS TTS over a synthetic
-  crowd. `courtsider.eval.run_real_audio` runs the same pipeline on the real broadcast audio.
+* **The ASR model comparison (table 4) uses synthetic audio**: real commentary text re-voiced with
+  macOS TTS over a synthetic crowd, because word error rate needs an exact reference script.
+  The end-to-end real-audio check (table 5) covers 5 matches / 30 goals, so its rates are rough.
 * **The commentary is mostly machine-translated** (Whisper's translate task) from Spanish,
   French, German, Russian and others; native English commentary would be easier.
 * **Team attribution from text is hard** without a team sheet that maps players to teams. The
