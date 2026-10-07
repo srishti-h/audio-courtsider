@@ -49,11 +49,17 @@ export function useReplay(params: ReplayParams | null): ReplayState {
   useEffect(() => {
     if (!params) return
     setState({ ...initial, status: 'loading' })
-    const q = new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)]))
-    const proto = location.protocol === 'https:' ? 'wss' : 'ws'
-    const ws = new WebSocket(`${proto}://${location.host}/ws/replay?${q}`)
-    ws.onmessage = (e) => { buf.current.push(JSON.parse(e.data)) }
-    ws.onerror = () => setState((s) => ({ ...s, status: 'error' }))
+    let stop: () => void
+    if (params.file) {
+      stop = playStatic(params.file, params.speed, (m) => buf.current.push(m), () => setState((s) => ({ ...s, status: 'error' })))
+    } else {
+      const q = new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)]))
+      const proto = location.protocol === 'https:' ? 'wss' : 'ws'
+      const ws = new WebSocket(`${proto}://${location.host}/ws/replay?${q}`)
+      ws.onmessage = (e) => { buf.current.push(JSON.parse(e.data)) }
+      ws.onerror = () => setState((s) => ({ ...s, status: 'error' }))
+      stop = () => ws.close()
+    }
     let raf = 0
     const flush = () => {
       if (buf.current.length) {
@@ -64,7 +70,31 @@ export function useReplay(params: ReplayParams | null): ReplayState {
       raf = requestAnimationFrame(flush)
     }
     raf = requestAnimationFrame(flush)
-    return () => { ws.close(); cancelAnimationFrame(raf); buf.current = [] }
+    return () => { stop(); cancelAnimationFrame(raf); buf.current = [] }
   }, [params])
   return state
+}
+
+/** Static mode (GitHub Pages): replay a pre-computed tape client-side with the same pacing as the server. */
+function playStatic(url: string, speed: number, emit: (m: any) => void, onError: () => void): () => void {
+  let cancelled = false
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+  ;(async () => {
+    try {
+      const tape = await (await fetch(url)).json()
+      emit(tape.meta)
+      let prev: number | null = null
+      for (const m of tape.messages) {
+        if (cancelled) return
+        // state carried in from before the window is applied instantly; pacing starts at the window
+        if (prev !== null && m.t > prev && prev >= (tape.start ?? -Infinity)) await sleep(Math.min((m.t - prev) / speed, 2) * 1000)
+        prev = m.t
+        emit(m)
+      }
+      if (!cancelled) emit({ kind: 'end' })
+    } catch {
+      onError()
+    }
+  })()
+  return () => { cancelled = true }
 }

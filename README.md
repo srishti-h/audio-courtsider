@@ -5,7 +5,10 @@ commentary, works out what just happened on the pitch, and trades on that head s
 simulated in-play exchange — then measures how much the edge is worth and whether a market maker
 can defend against it.
 
-![dashboard](results/figures/dashboard.png)
+**[▶ Live demo](https://srishti-h.github.io/audio-courtsider/)**: replay real goals in the browser and flip the
+market's feed delay to watch the edge appear or vanish.
+
+![demo](results/figures/demo.gif)
 
 ## Results
 

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:pages": "tsc -b && vite build --mode pages --base /audio-courtsider/",
     "lint": "oxlint",
     "preview": "vite preview"
   },

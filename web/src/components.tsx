@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { MarkerMsg, PnlMsg, SignalMsg, TradeMsg, Level } from './types'
 import { CONTRACTS } from './types'
+import { RESULTS_URL } from './source'
 
 const fmtClock = (half: number, clock: number) => {
   const m = Math.floor(clock / 60), s = Math.floor(clock % 60)
@@ -150,7 +151,7 @@ export function Timeline({ markers, now, span = 90 }: { markers: MarkerMsg[]; no
 
 export function ResultsPanel() {
   const [r, setR] = useState<any>(null)
-  useEffect(() => { fetch('/api/results').then((x) => x.json()).then(setR).catch(() => setR(null)) }, [])
+  useEffect(() => { fetch(RESULTS_URL).then((x) => x.json()).then(setR).catch(() => setR(null)) }, [])
   if (!r?.market) return null
   const paired = r.market.paired_dollars_per_match ?? {}
   const gains = Object.entries(paired).filter(([k]) => k.startsWith('cs_gain')) as [string, any][]
@@ -160,7 +161,9 @@ export function ResultsPanel() {
       <div className="kpis">
         {goal && <div><b>{Math.round(goal.precision * 100)}% / {Math.round(goal.recall * 100)}%</b><span>goal precision / recall from commentary text (test)</span></div>}
         {goal && <div><b>{goal.delay_p50.toFixed(1)} s</b><span>median detection after the goal, incl. ASR latency</span></div>}
-        {r.asr && <div><b>{r.asr.pipeline_latency_s.toFixed(2)} s</b><span>speech → text segment ({r.asr.pipeline_model}, synthetic audio)</span></div>}
+        {r.real_audio ? (
+          <div><b>{r.real_audio.roar_goal_delay_p50.toFixed(1)} s vs {r.real_audio.text_goal_delay_p50.toFixed(1)} s</b><span>crowd roar vs commentary after a goal, real broadcast audio</span></div>
+        ) : r.asr && <div><b>{r.asr.pipeline_latency_s.toFixed(2)} s</b><span>speech → text segment ({r.asr.pipeline_model}, synthetic audio)</span></div>}
         {r.bench && <div><b>{r.bench.exchange.p50_us.toFixed(1)} µs</b><span>exchange matching latency p50 (Python)</span></div>}
       </div>
       <table>

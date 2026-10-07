@@ -62,6 +62,7 @@ export interface Meta {
 }
 
 export interface ReplayParams {
+  file?: string // static mode: URL of a pre-computed tape
   game_id: string
   speed: number
   feed_delay: number
@@ -71,3 +72,12 @@ export interface ReplayParams {
 }
 
 export const CONTRACTS = ['HOME', 'DRAW', 'AWAY', 'OVER25', 'BTTS'] as const
+
+export interface DemoMatch {
+  id: string
+  label: string
+  date: string
+  home: string
+  away: string
+  goals: { n: number; minute: number; team: string }[]
+}

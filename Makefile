@@ -1,4 +1,4 @@
-.PHONY: setup data train eval bench test serve web lint screenshot
+.PHONY: setup data train eval bench test serve web lint screenshot demo gif
 
 setup:            ## install Python + web dependencies
 	uv sync
@@ -31,3 +31,10 @@ web:              ## dev server on :5173 proxying to the API
 
 screenshot:       ## README dashboard image (needs serve + web running, Google Chrome)
 	uv run python scripts/screenshot.py
+
+demo:             ## static GitHub Pages build: pre-computed replays -> web/public/demo, then web/dist
+	uv run python scripts/export_demo.py
+	cd web && npm run build:pages
+
+gif:              ## README GIF (needs `cd web && npx vite preview --base /audio-courtsider/` on :4173, Google Chrome)
+	uv run python scripts/record_gif.py
