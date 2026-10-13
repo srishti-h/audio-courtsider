@@ -17,9 +17,7 @@ def main() -> None:
     if args.download:
         soccernet.download_labels()
         if not ECHOES_DIR.exists():
-            subprocess.run(
-                ["git", "clone", "--depth", "1", echoes.ECHOES_REPO, str(ECHOES_DIR.parent)], check=True
-            )
+            subprocess.run(["git", "clone", "--depth", "1", echoes.ECHOES_REPO, str(ECHOES_DIR.parent)], check=True)
         footballdata.download()
 
     games, events = soccernet.load()

@@ -29,8 +29,7 @@ def download(out_dir: Path = FOOTBALLDATA_DIR) -> None:
             path = out_dir / f"{code}_{season}.csv"
             if path.exists() and path.stat().st_size > 0:
                 continue
-            r = requests.get(URL.format(season=season, code=code), timeout=30,
-                             headers={"User-Agent": "Mozilla/5.0"})
+            r = requests.get(URL.format(season=season, code=code), timeout=30, headers={"User-Agent": "Mozilla/5.0"})
             r.raise_for_status()
             path.write_bytes(r.content)
 
@@ -76,14 +75,18 @@ def match_games(games: pd.DataFrame, results: pd.DataFrame) -> pd.DataFrame:
         cand = results[(results.league == g.league) & ((results.date - g.date).abs() <= pd.Timedelta(days=1))]
         if cand.empty:
             continue
-        scores = cand.apply(
-            lambda r: fuzz.WRatio(g.home, r.home) + fuzz.WRatio(g.away, r.away), axis=1
-        )
+        scores = cand.apply(lambda r, g=g: fuzz.WRatio(g.home, r.home) + fuzz.WRatio(g.away, r.away), axis=1)
         best = cand.loc[scores.idxmax()]
         if scores.max() < 140 or (best.home_goals, best.away_goals) != (g.home_goals, g.away_goals):
             continue
         rows.append(
-            dict(game_id=g.game_id, fd_home=best.home, fd_away=best.away,
-                 mkt_h=best.mkt_h, mkt_d=best.mkt_d, mkt_a=best.mkt_a)
+            dict(
+                game_id=g.game_id,
+                fd_home=best.home,
+                fd_away=best.away,
+                mkt_h=best.mkt_h,
+                mkt_d=best.mkt_d,
+                mkt_a=best.mkt_a,
+            )
         )
     return pd.DataFrame(rows)
