@@ -1,0 +1,18 @@
+{
+  "confirmed (1 s step)": {
+    "goals": 30,
+    "recall": 0.233,
+    "delay_p50": 11.11,
+    "delay_p25": 7.68,
+    "false_alarms_per_min": 0.075,
+    "negative_minutes": 26.7
+  },
+  "fast (0.5 s step + speculative)": {
+    "goals": 30,
+    "recall": 0.567,
+    "delay_p50": 5.66,
+    "delay_p25": 4.09,
+    "false_alarms_per_min": 0.15,
+    "negative_minutes": 26.7
+  }
+}

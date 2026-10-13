@@ -76,7 +76,7 @@ def load_split(split: str) -> list[dict]:
     for gid in games[games.split == split].game_id:
         for half in (1, 2):
             p = feature_path(gid, half)
-            if not p.exists():
+            if not p.exists() or p.stat().st_size < 1_000_000:  # missing or truncated broadcast
                 continue
             g = np.sort(goals[(goals.game_id == gid) & (goals.half == half)].t.to_numpy())
             g = g[np.concatenate([[True], np.diff(g) > 5])] if len(g) else g  # duplicate labels
@@ -95,7 +95,9 @@ def train(halves: list[dict], epochs: int, seed: int = 0) -> CausalTCN:
     data = []
     for h in halves:
         x = normalise(np.load(h["path"]))
-        data.append((x, labels(len(x), h["goals"]), h["goals"]))
+        if len(x) >= int(CROP_S * FPS):  # a few broadcasts are truncated to seconds of audio
+            data.append((x, labels(len(x), h["goals"]), h["goals"]))
+    print(f"training on {len(data)} halves", flush=True)
     model = CausalTCN().to(dev)
     opt = torch.optim.AdamW(model.parameters(), lr=2e-3, weight_decay=1e-4)
     crop, rf = int(CROP_S * FPS), model.receptive_field
