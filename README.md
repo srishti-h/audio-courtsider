@@ -91,7 +91,22 @@ on 5,478 matches, closing 73 % of the gap between base rates (1.063) and Pinnacl
 engine handles 350 k msgs/s (p50 2.3 µs, p99 7.8 µs); the text classifier scores a segment in
 3.4 ms on MPS; acoustic features cost 11 ms per second of audio.
 
-## How it works
+## Live mode: point it at a real match
+
+The local dashboard has a **Live** tab. Pick a match from the live-score feed (ESPN's public
+scoreboard, polled every 5 s; or set `FOOTBALL_DATA_TOKEN` to use football-data.org), then give it
+audio: a **browser tab** streaming the game, your **microphone** near a TV or radio, or a saved
+**audio file**. In real time it shows:
+
+* the streaming transcript (Whisper `small`, biased with the **real lineups** from the feed),
+* P(goal / penalty / red card) and which team, plus the crowd-roar level,
+* every detection, and when the feed reports a goal, **how many seconds the commentary beat it by**.
+
+Sessions are logged to `data/live/` (text and detections only, no audio). Then
+`python -m courtsider.live.report` summarises lead times across every match you've listened to
+(`results/live.json`). Text play-by-play sites (FotMob, ESPN) aren't used as "commentary": their
+text is generated from the same data feed, so it can never be ahead of it.
+
 
 ```
  commentary audio ──► streaming Whisper (mlx, LocalAgreement-2, team-sheet biasing) ─┐
@@ -149,6 +164,7 @@ make test      # unit + property-based tests
 make serve     # API on :8000   (in another terminal: make web  ->  http://localhost:5173)
 ```
 
+Live mode: open the **Live** tab at http://localhost:5173 after `make serve` + `make web`.
 Replays are shareable: `http://localhost:5173/?game=<game_id>&start=<seconds>&feed_delay=8&autoplay=1`.
 
 ## Layout
@@ -165,7 +181,8 @@ src/courtsider/
   exchange/   order book, matching engine, market-data mirror
   sim/        match simulation, agents
   eval/       experiments (run_pricing, run_audio, run_text, run_market, run_bench, run_real_audio)
-  api/        FastAPI + WebSocket replay
+  live/       live pipeline (incremental Whisper + text model + crowd), live-score feeds, lead-time report
+  api/        FastAPI: WebSocket replay + live audio endpoint
 web/          React + TypeScript dashboard
 tests/        exchange property tests (Hypothesis), pricing and simulation tests
 results/      experiment outputs and figures
