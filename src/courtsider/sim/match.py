@@ -47,6 +47,7 @@ class SimConfig:
     cs_max_qty: int = 40
     cs_unwind_after_feed: float = 1.0
     cs_timeout: float = 25.0
+    cs_feed_memory: float = 45.0  # ignore detections of an event type the feed reported this recently
     markout_horizon: float = 30.0
     seed: int = 0
 
@@ -108,6 +109,7 @@ class MatchSim:
         self.mm_orders_live = False
         self.mm_guard_until = -1.0
         self.cs_pending: dict | None = None
+        self.last_feed: dict[str, float] = {}
         self.fills: list[dict] = []
         self.timeline: list[dict] = []
         self.mid_history: dict[str, list[tuple[float, float]]] = {c: [] for c in CONTRACTS}
@@ -212,6 +214,7 @@ class MatchSim:
 
             self.feed_state = replace(self.feed_state, pending_penalty=ev.team)
         self.timeline.append(dict(t=self.now, kind="feed", event=ev.event, team=ev.team))
+        self.last_feed[ev.event] = self.now
         self.mm_guard_until = -1.0
         self.at(self.now + self.cfg.mm_latency, self.mm_quote)
         if self.cs_pending is not None:
@@ -273,7 +276,11 @@ class MatchSim:
         self.timeline.append(dict(t=self.now, kind="signal", probs=s.probs, team=s.team, text=s.text))
         if self.cs_pending is not None:
             return
-        best = max(PRICE_EVENTS, key=lambda e: s.probs.get(e, 0.0))
+        # commentary about an event the feed already published is old news, not a second event
+        fresh = [e for e in PRICE_EVENTS if self.now - self.last_feed.get(e, -1e9) > self.cfg.cs_feed_memory]
+        if not fresh:
+            return
+        best = max(fresh, key=lambda e: s.probs.get(e, 0.0))
         p = s.probs.get(best, 0.0)
         if p < self.cfg.cs_threshold:
             return

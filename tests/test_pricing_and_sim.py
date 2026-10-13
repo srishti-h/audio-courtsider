@@ -94,3 +94,10 @@ def test_audio_aware_market_maker_pulls_quotes():
     sim = MatchSim(_pricer(), _events(), good, cfg, final_score=(1, 0))
     out = sim.run()
     assert out["cs_volume"] == 0  # MM's own detector fired at the same time, so there was nothing to hit
+
+
+def test_courtsider_ignores_commentary_about_a_goal_the_feed_already_reported():
+    late = [Signal(605.0, {"goal": 0.95, "red_card": 0, "penalty": 0}, {"home": 0.95, "away": 0.05})]
+    cfg = SimConfig(feed_delay=1.0, feed_jitter=0.0)
+    out = MatchSim(_pricer(), _events(), late, cfg, final_score=(1, 0)).run()
+    assert out["cs_entries"] == 0

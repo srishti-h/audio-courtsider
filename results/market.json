@@ -2,62 +2,62 @@
   "n_games": 75,
   "paired_dollars_per_match": {
     "cs_gain_feed_2s_vs_1s": {
-      "mean": -0.006,
-      "sem": 0.004
+      "mean": 0.0,
+      "sem": 0.0
     },
     "cs_gain_feed_3s_vs_1s": {
-      "mean": 0.02,
-      "sem": 0.024
+      "mean": 0.03,
+      "sem": 0.023
     },
     "cs_gain_feed_5s_vs_1s": {
-      "mean": 2.018,
-      "sem": 0.787
+      "mean": 1.953,
+      "sem": 0.783
     },
     "cs_gain_feed_8s_vs_1s": {
-      "mean": 2.919,
-      "sem": 0.88
+      "mean": 2.709,
+      "sem": 0.875
     },
     "cs_gain_feed_12s_vs_1s": {
-      "mean": 3.275,
-      "sem": 0.896
+      "mean": 2.851,
+      "sem": 0.879
     },
     "cs_gain_feed_20s_vs_1s": {
-      "mean": 3.437,
-      "sem": 0.963
+      "mean": 2.75,
+      "sem": 0.933
     },
     "guard_0.2_feed_8s": {
-      "adverse_selection_saved": 0.799,
-      "adverse_selection_saved_sem": 0.943,
-      "spread_revenue_change": -0.552,
+      "adverse_selection_saved": 1.391,
+      "adverse_selection_saved_sem": 0.978,
+      "spread_revenue_change": -0.554,
       "spread_revenue_change_sem": 0.104
     },
     "guard_0.2_feed_12s": {
-      "adverse_selection_saved": 1.14,
-      "adverse_selection_saved_sem": 0.96,
-      "spread_revenue_change": -0.528,
+      "adverse_selection_saved": 1.511,
+      "adverse_selection_saved_sem": 0.985,
+      "spread_revenue_change": -0.529,
       "spread_revenue_change_sem": 0.106
     },
     "guard_0.2_feed_20s": {
-      "adverse_selection_saved": 1.255,
-      "adverse_selection_saved_sem": 0.964,
+      "adverse_selection_saved": 1.398,
+      "adverse_selection_saved_sem": 0.988,
       "spread_revenue_change": -0.565,
       "spread_revenue_change_sem": 0.094
     },
     "guard_0.4_feed_8s": {
-      "adverse_selection_saved": 0.496,
-      "adverse_selection_saved_sem": 0.679,
-      "spread_revenue_change": -0.202,
-      "spread_revenue_change_sem": 0.05
+      "adverse_selection_saved": 0.912,
+      "adverse_selection_saved_sem": 0.716,
+      "spread_revenue_change": -0.2,
+      "spread_revenue_change_sem": 0.049
     },
     "guard_0.4_feed_12s": {
-      "adverse_selection_saved": 0.786,
-      "adverse_selection_saved_sem": 0.699,
-      "spread_revenue_change": -0.153,
+      "adverse_selection_saved": 1.012,
+      "adverse_selection_saved_sem": 0.725,
+      "spread_revenue_change": -0.154,
       "spread_revenue_change_sem": 0.042
     },
     "guard_0.4_feed_20s": {
-      "adverse_selection_saved": 0.98,
-      "adverse_selection_saved_sem": 0.708,
+      "adverse_selection_saved": 1.098,
+      "adverse_selection_saved_sem": 0.729,
       "spread_revenue_change": -0.211,
       "spread_revenue_change_sem": 0.043
     },
@@ -77,14 +77,14 @@
       "latency": 2.882,
       "mm_audio_guard": false,
       "mm_guard_threshold": 0.6,
-      "cs_pnl": -232.027,
-      "mm_pnl": 12605.827,
-      "mm_markout_vs_cs": 222.946,
-      "mm_markout_vs_noise": 12352.105,
-      "mm_spread_vs_noise": 12363.429,
-      "cs_entries": 1.36,
-      "cs_volume": 128.347,
-      "cs_pnl_sem": 39.301
+      "cs_pnl": -148.387,
+      "mm_pnl": 12529.84,
+      "mm_markout_vs_cs": 141.05,
+      "mm_markout_vs_noise": 12352.073,
+      "mm_spread_vs_noise": 12363.356,
+      "cs_entries": 0.813,
+      "cs_volume": 84.507,
+      "cs_pnl_sem": 36.636
     },
     {
       "feed_delay": 1.0,
@@ -107,14 +107,14 @@
       "latency": 2.882,
       "mm_audio_guard": true,
       "mm_guard_threshold": 0.4,
-      "cs_pnl": -72.573,
-      "mm_pnl": 12429.76,
-      "mm_markout_vs_cs": 118.513,
-      "mm_markout_vs_noise": 12320.617,
-      "mm_spread_vs_noise": 12331.691,
-      "cs_entries": 0.813,
-      "cs_volume": 72.333,
-      "cs_pnl_sem": 51.35
+      "cs_pnl": -91.56,
+      "mm_pnl": 12455.2,
+      "mm_markout_vs_cs": 84.494,
+      "mm_markout_vs_noise": 12320.257,
+      "mm_spread_vs_noise": 12331.286,
+      "cs_entries": 0.573,
+      "cs_volume": 54.413,
+      "cs_pnl_sem": 34.302
     },
     {
       "feed_delay": 1.0,
@@ -122,14 +122,14 @@
       "latency": 2.882,
       "mm_audio_guard": false,
       "mm_guard_threshold": 0.6,
-      "cs_pnl": -98.52,
-      "mm_pnl": 12473.8,
-      "mm_markout_vs_cs": 101.112,
-      "mm_markout_vs_noise": 12353.121,
-      "mm_spread_vs_noise": 12364.425,
-      "cs_entries": 0.667,
-      "cs_volume": 67.64,
-      "cs_pnl_sem": 27.857
+      "cs_pnl": -34.64,
+      "mm_pnl": 12409.84,
+      "mm_markout_vs_cs": 34.562,
+      "mm_markout_vs_noise": 12353.284,
+      "mm_spread_vs_noise": 12364.561,
+      "cs_entries": 0.253,
+      "cs_volume": 32.187,
+      "cs_pnl_sem": 25.382
     },
     {
       "feed_delay": 1.0,
@@ -137,14 +137,14 @@
       "latency": 2.882,
       "mm_audio_guard": false,
       "mm_guard_threshold": 0.6,
-      "cs_pnl": -53.347,
-      "mm_pnl": 12428.027,
-      "mm_markout_vs_cs": 51.083,
-      "mm_markout_vs_noise": 12353.87,
-      "mm_spread_vs_noise": 12365.114,
-      "cs_entries": 0.253,
-      "cs_volume": 27.24,
-      "cs_pnl_sem": 14.499
+      "cs_pnl": -20.28,
+      "mm_pnl": 12394.973,
+      "mm_markout_vs_cs": 19.377,
+      "mm_markout_vs_noise": 12353.883,
+      "mm_spread_vs_noise": 12365.127,
+      "cs_entries": 0.067,
+      "cs_volume": 10.173,
+      "cs_pnl_sem": 11.066
     },
     {
       "feed_delay": 1.0,
@@ -152,14 +152,14 @@
       "latency": 2.882,
       "mm_audio_guard": false,
       "mm_guard_threshold": 0.6,
-      "cs_pnl": -30.613,
-      "mm_pnl": 12405.32,
-      "mm_markout_vs_cs": 32.212,
-      "mm_markout_vs_noise": 12353.897,
-      "mm_spread_vs_noise": 12365.141,
-      "cs_entries": 0.173,
-      "cs_volume": 17.453,
-      "cs_pnl_sem": 9.793
+      "cs_pnl": -5.813,
+      "mm_pnl": 12380.467,
+      "mm_markout_vs_cs": 8.554,
+      "mm_markout_vs_noise": 12353.843,
+      "mm_spread_vs_noise": 12365.087,
+      "cs_entries": 0.027,
+      "cs_volume": 4.653,
+      "cs_pnl_sem": 5.348
     },
     {
       "feed_delay": 1.0,
@@ -182,14 +182,14 @@
       "latency": 2.882,
       "mm_audio_guard": false,
       "mm_guard_threshold": 0.6,
-      "cs_pnl": -232.667,
-      "mm_pnl": 12614.293,
-      "mm_markout_vs_cs": 223.535,
-      "mm_markout_vs_noise": 12368.838,
-      "mm_spread_vs_noise": 12363.835,
-      "cs_entries": 1.36,
-      "cs_volume": 128.667,
-      "cs_pnl_sem": 39.427
+      "cs_pnl": -148.387,
+      "mm_pnl": 12537.667,
+      "mm_markout_vs_cs": 141.046,
+      "mm_markout_vs_noise": 12368.805,
+      "mm_spread_vs_noise": 12363.762,
+      "cs_entries": 0.813,
+      "cs_volume": 84.507,
+      "cs_pnl_sem": 36.636
     },
     {
       "feed_delay": 2.0,
@@ -212,14 +212,14 @@
       "latency": 2.882,
       "mm_audio_guard": true,
       "mm_guard_threshold": 0.4,
-      "cs_pnl": -72.947,
-      "mm_pnl": 12437.307,
-      "mm_markout_vs_cs": 118.872,
-      "mm_markout_vs_noise": 12336.851,
-      "mm_spread_vs_noise": 12331.595,
-      "cs_entries": 0.813,
-      "cs_volume": 72.52,
-      "cs_pnl_sem": 51.382
+      "cs_pnl": -91.56,
+      "mm_pnl": 12462.373,
+      "mm_markout_vs_cs": 84.49,
+      "mm_markout_vs_noise": 12336.492,
+      "mm_spread_vs_noise": 12331.19,
+      "cs_entries": 0.573,
+      "cs_volume": 54.413,
+      "cs_pnl_sem": 34.302
     },
     {
       "feed_delay": 2.0,
@@ -227,14 +227,14 @@
       "latency": 2.882,
       "mm_audio_guard": false,
       "mm_guard_threshold": 0.6,
-      "cs_pnl": -98.787,
-      "mm_pnl": 12481.893,
-      "mm_markout_vs_cs": 101.342,
-      "mm_markout_vs_noise": 12369.854,
-      "mm_spread_vs_noise": 12364.831,
-      "cs_entries": 0.667,
-      "cs_volume": 67.773,
-      "cs_pnl_sem": 27.866
+      "cs_pnl": -34.64,
+      "mm_pnl": 12417.667,
+      "mm_markout_vs_cs": 34.562,
+      "mm_markout_vs_noise": 12370.016,
+      "mm_spread_vs_noise": 12364.967,
+      "cs_entries": 0.253,
+      "cs_volume": 32.187,
+      "cs_pnl_sem": 25.382
     },
     {
       "feed_delay": 2.0,
@@ -242,14 +242,14 @@
       "latency": 2.882,
       "mm_audio_guard": false,
       "mm_guard_threshold": 0.6,
-      "cs_pnl": -53.347,
-      "mm_pnl": 12435.853,
-      "mm_markout_vs_cs": 51.083,
-      "mm_markout_vs_noise": 12370.603,
-      "mm_spread_vs_noise": 12365.52,
-      "cs_entries": 0.253,
-      "cs_volume": 27.24,
-      "cs_pnl_sem": 14.499
+      "cs_pnl": -20.28,
+      "mm_pnl": 12402.8,
+      "mm_markout_vs_cs": 19.377,
+      "mm_markout_vs_noise": 12370.616,
+      "mm_spread_vs_noise": 12365.533,
+      "cs_entries": 0.067,
+      "cs_volume": 10.173,
+      "cs_pnl_sem": 11.066
     },
     {
       "feed_delay": 2.0,
@@ -257,14 +257,14 @@
       "latency": 2.882,
       "mm_audio_guard": false,
       "mm_guard_threshold": 0.6,
-      "cs_pnl": -30.613,
-      "mm_pnl": 12413.147,
-      "mm_markout_vs_cs": 32.212,
-      "mm_markout_vs_noise": 12370.63,
-      "mm_spread_vs_noise": 12365.547,
-      "cs_entries": 0.173,
-      "cs_volume": 17.453,
-      "cs_pnl_sem": 9.793
+      "cs_pnl": -5.813,
+      "mm_pnl": 12388.293,
+      "mm_markout_vs_cs": 8.554,
+      "mm_markout_vs_noise": 12370.576,
+      "mm_spread_vs_noise": 12365.493,
+      "cs_entries": 0.027,
+      "cs_volume": 4.653,
+      "cs_pnl_sem": 5.348
     },
     {
       "feed_delay": 2.0,
@@ -287,14 +287,14 @@
       "latency": 2.882,
       "mm_audio_guard": false,
       "mm_guard_threshold": 0.6,
-      "cs_pnl": -230.067,
-      "mm_pnl": 12612.533,
-      "mm_markout_vs_cs": 221.398,
-      "mm_markout_vs_noise": 12385.784,
-      "mm_spread_vs_noise": 12364.763,
-      "cs_entries": 1.373,
-      "cs_volume": 130.28,
-      "cs_pnl_sem": 39.752
+      "cs_pnl": -145.387,
+      "mm_pnl": 12535.507,
+      "mm_markout_vs_cs": 138.502,
+      "mm_markout_vs_noise": 12385.751,
+      "mm_spread_vs_noise": 12364.69,
+      "cs_entries": 0.827,
+      "cs_volume": 86.04,
+      "cs_pnl_sem": 36.981
     },
     {
       "feed_delay": 3.0,
@@ -317,14 +317,14 @@
       "latency": 2.882,
       "mm_audio_guard": true,
       "mm_guard_threshold": 0.4,
-      "cs_pnl": -67.813,
-      "mm_pnl": 12434.32,
-      "mm_markout_vs_cs": 114.178,
-      "mm_markout_vs_noise": 12353.418,
-      "mm_spread_vs_noise": 12332.171,
-      "cs_entries": 0.813,
-      "cs_volume": 72.987,
-      "cs_pnl_sem": 51.856
+      "cs_pnl": -88.56,
+      "mm_pnl": 12461.587,
+      "mm_markout_vs_cs": 81.946,
+      "mm_markout_vs_noise": 12353.125,
+      "mm_spread_vs_noise": 12331.833,
+      "cs_entries": 0.587,
+      "cs_volume": 55.947,
+      "cs_pnl_sem": 35.039
     },
     {
       "feed_delay": 3.0,
@@ -332,14 +332,14 @@
       "latency": 2.882,
       "mm_audio_guard": false,
       "mm_guard_threshold": 0.6,
-      "cs_pnl": -98.32,
-      "mm_pnl": 12481.68,
-      "mm_markout_vs_cs": 101.654,
-      "mm_markout_vs_noise": 12386.213,
-      "mm_spread_vs_noise": 12365.172,
-      "cs_entries": 0.667,
-      "cs_volume": 67.787,
-      "cs_pnl_sem": 28.514
+      "cs_pnl": -33.773,
+      "mm_pnl": 12417.0,
+      "mm_markout_vs_cs": 34.464,
+      "mm_markout_vs_noise": 12386.322,
+      "mm_spread_vs_noise": 12365.254,
+      "cs_entries": 0.253,
+      "cs_volume": 32.12,
+      "cs_pnl_sem": 25.997
     },
     {
       "feed_delay": 3.0,
@@ -347,14 +347,14 @@
       "latency": 2.882,
       "mm_audio_guard": false,
       "mm_guard_threshold": 0.6,
-      "cs_pnl": -53.347,
-      "mm_pnl": 12435.227,
-      "mm_markout_vs_cs": 51.083,
-      "mm_markout_vs_noise": 12386.851,
-      "mm_spread_vs_noise": 12365.753,
-      "cs_entries": 0.253,
-      "cs_volume": 27.24,
-      "cs_pnl_sem": 14.499
+      "cs_pnl": -20.28,
+      "mm_pnl": 12402.173,
+      "mm_markout_vs_cs": 19.377,
+      "mm_markout_vs_noise": 12386.865,
+      "mm_spread_vs_noise": 12365.767,
+      "cs_entries": 0.067,
+      "cs_volume": 10.173,
+      "cs_pnl_sem": 11.066
     },
     {
       "feed_delay": 3.0,
@@ -362,14 +362,14 @@
       "latency": 2.882,
       "mm_audio_guard": false,
       "mm_guard_threshold": 0.6,
-      "cs_pnl": -30.613,
-      "mm_pnl": 12412.52,
-      "mm_markout_vs_cs": 32.212,
-      "mm_markout_vs_noise": 12386.878,
-      "mm_spread_vs_noise": 12365.78,
-      "cs_entries": 0.173,
-      "cs_volume": 17.453,
-      "cs_pnl_sem": 9.793
+      "cs_pnl": -5.813,
+      "mm_pnl": 12387.667,
+      "mm_markout_vs_cs": 8.554,
+      "mm_markout_vs_noise": 12386.825,
+      "mm_spread_vs_noise": 12365.727,
+      "cs_entries": 0.027,
+      "cs_volume": 4.653,
+      "cs_pnl_sem": 5.348
     },
     {
       "feed_delay": 3.0,
@@ -392,14 +392,14 @@
       "latency": 2.882,
       "mm_audio_guard": false,
       "mm_guard_threshold": 0.6,
-      "cs_pnl": -30.24,
-      "mm_pnl": 12437.36,
-      "mm_markout_vs_cs": 15.555,
-      "mm_markout_vs_noise": 12390.857,
-      "mm_spread_vs_noise": 12365.519,
-      "cs_entries": 1.547,
-      "cs_volume": 149.613,
-      "cs_pnl_sem": 86.839
+      "cs_pnl": 46.88,
+      "mm_pnl": 12363.573,
+      "mm_markout_vs_cs": -59.408,
+      "mm_markout_vs_noise": 12390.861,
+      "mm_spread_vs_noise": 12365.441,
+      "cs_entries": 1.067,
+      "cs_volume": 109.853,
+      "cs_pnl_sem": 89.732
     },
     {
       "feed_delay": 5.0,
@@ -422,14 +422,14 @@
       "latency": 2.882,
       "mm_audio_guard": true,
       "mm_guard_threshold": 0.4,
-      "cs_pnl": 29.213,
-      "mm_pnl": 12364.253,
-      "mm_markout_vs_cs": 17.771,
-      "mm_markout_vs_noise": 12357.583,
-      "mm_spread_vs_noise": 12332.362,
-      "cs_entries": 0.88,
-      "cs_volume": 79.933,
-      "cs_pnl_sem": 79.368
+      "cs_pnl": -5.44,
+      "mm_pnl": 12401.987,
+      "mm_markout_vs_cs": -9.324,
+      "mm_markout_vs_noise": 12358.317,
+      "mm_spread_vs_noise": 12333.045,
+      "cs_entries": 0.693,
+      "cs_volume": 65.84,
+      "cs_pnl_sem": 63.4
     },
     {
       "feed_delay": 5.0,
@@ -437,14 +437,14 @@
       "latency": 2.882,
       "mm_audio_guard": false,
       "mm_guard_threshold": 0.6,
-      "cs_pnl": 13.8,
-      "mm_pnl": 12390.387,
-      "mm_markout_vs_cs": -10.397,
-      "mm_markout_vs_noise": 12391.874,
-      "mm_spread_vs_noise": 12365.735,
-      "cs_entries": 0.76,
-      "cs_volume": 78.587,
-      "cs_pnl_sem": 64.281
+      "cs_pnl": 72.907,
+      "mm_pnl": 12331.52,
+      "mm_markout_vs_cs": -72.935,
+      "mm_markout_vs_noise": 12392.015,
+      "mm_spread_vs_noise": 12365.859,
+      "cs_entries": 0.387,
+      "cs_volume": 45.52,
+      "cs_pnl_sem": 68.035
     },
     {
       "feed_delay": 5.0,
@@ -452,14 +452,14 @@
       "latency": 2.882,
       "mm_audio_guard": false,
       "mm_guard_threshold": 0.6,
-      "cs_pnl": -12.427,
-      "mm_pnl": 12411.587,
-      "mm_markout_vs_cs": 10.329,
-      "mm_markout_vs_noise": 12392.095,
-      "mm_spread_vs_noise": 12365.924,
-      "cs_entries": 0.28,
-      "cs_volume": 30.413,
-      "cs_pnl_sem": 38.171
+      "cs_pnl": 20.64,
+      "mm_pnl": 12378.533,
+      "mm_markout_vs_cs": -21.543,
+      "mm_markout_vs_noise": 12392.108,
+      "mm_spread_vs_noise": 12365.937,
+      "cs_entries": 0.093,
+      "cs_volume": 13.347,
+      "cs_pnl_sem": 42.654
     },
     {
       "feed_delay": 5.0,
@@ -467,14 +467,14 @@
       "latency": 2.882,
       "mm_audio_guard": false,
       "mm_guard_threshold": 0.6,
-      "cs_pnl": 13.24,
-      "mm_pnl": 12385.947,
-      "mm_markout_vs_cs": -11.502,
-      "mm_markout_vs_noise": 12392.122,
-      "mm_spread_vs_noise": 12365.95,
-      "cs_entries": 0.187,
-      "cs_volume": 19.027,
-      "cs_pnl_sem": 42.362
+      "cs_pnl": 35.107,
+      "mm_pnl": 12364.027,
+      "mm_markout_vs_cs": -32.366,
+      "mm_markout_vs_noise": 12392.068,
+      "mm_spread_vs_noise": 12365.897,
+      "cs_entries": 0.053,
+      "cs_volume": 7.827,
+      "cs_pnl_sem": 41.346
     },
     {
       "feed_delay": 5.0,
@@ -497,14 +497,14 @@
       "latency": 2.882,
       "mm_audio_guard": false,
       "mm_guard_threshold": 0.6,
-      "cs_pnl": 59.907,
-      "mm_pnl": 7933.507,
-      "mm_markout_vs_cs": -79.875,
-      "mm_markout_vs_noise": 12253.291,
-      "mm_spread_vs_noise": 12225.925,
-      "cs_entries": 1.587,
-      "cs_volume": 158.387,
-      "cs_pnl_sem": 94.873
+      "cs_pnl": 122.493,
+      "mm_pnl": 7865.453,
+      "mm_markout_vs_cs": -139.067,
+      "mm_markout_vs_noise": 12253.491,
+      "mm_spread_vs_noise": 12226.036,
+      "cs_entries": 1.227,
+      "cs_volume": 127.627,
+      "cs_pnl_sem": 98.402
     },
     {
       "feed_delay": 8.0,
@@ -527,14 +527,14 @@
       "latency": 2.882,
       "mm_audio_guard": true,
       "mm_guard_threshold": 0.4,
-      "cs_pnl": 42.28,
-      "mm_pnl": 8155.907,
-      "mm_markout_vs_cs": -30.269,
-      "mm_markout_vs_noise": 12225.163,
-      "mm_spread_vs_noise": 12205.738,
-      "cs_entries": 0.88,
-      "cs_volume": 81.333,
-      "cs_pnl_sem": 78.804
+      "cs_pnl": 15.093,
+      "mm_pnl": 8179.307,
+      "mm_markout_vs_cs": -47.884,
+      "mm_markout_vs_noise": 12225.51,
+      "mm_spread_vs_noise": 12206.037,
+      "cs_entries": 0.76,
+      "cs_volume": 72.413,
+      "cs_pnl_sem": 71.784
     },
     {
       "feed_delay": 8.0,
@@ -542,14 +542,14 @@
       "latency": 3.882,
       "mm_audio_guard": false,
       "mm_guard_threshold": 0.6,
-      "cs_pnl": -35.187,
-      "mm_pnl": 7988.92,
-      "mm_markout_vs_cs": 21.447,
-      "mm_markout_vs_noise": 12254.455,
-      "mm_spread_vs_noise": 12225.691,
-      "cs_entries": 1.507,
-      "cs_volume": 152.053,
-      "cs_pnl_sem": 95.915
+      "cs_pnl": 39.013,
+      "mm_pnl": 7918.187,
+      "mm_markout_vs_cs": -47.387,
+      "mm_markout_vs_noise": 12254.457,
+      "mm_spread_vs_noise": 12225.615,
+      "cs_entries": 1.12,
+      "cs_volume": 115.893,
+      "cs_pnl_sem": 97.122
     },
     {
       "feed_delay": 8.0,
@@ -557,14 +557,14 @@
       "latency": 5.882,
       "mm_audio_guard": false,
       "mm_guard_threshold": 0.6,
-      "cs_pnl": -170.573,
-      "mm_pnl": 7952.8,
-      "mm_markout_vs_cs": 168.529,
-      "mm_markout_vs_noise": 12244.551,
-      "mm_spread_vs_noise": 12216.715,
-      "cs_entries": 1.427,
-      "cs_volume": 137.067,
-      "cs_pnl_sem": 68.706
+      "cs_pnl": -87.867,
+      "mm_pnl": 7873.48,
+      "mm_markout_vs_cs": 94.393,
+      "mm_markout_vs_noise": 12245.741,
+      "mm_spread_vs_noise": 12217.843,
+      "cs_entries": 0.947,
+      "cs_volume": 97.08,
+      "cs_pnl_sem": 71.234
     },
     {
       "feed_delay": 8.0,
@@ -572,14 +572,14 @@
       "latency": 8.882,
       "mm_audio_guard": false,
       "mm_guard_threshold": 0.6,
-      "cs_pnl": -233.213,
-      "mm_pnl": 7999.733,
-      "mm_markout_vs_cs": 238.422,
-      "mm_markout_vs_noise": 12243.559,
-      "mm_spread_vs_noise": 12216.717,
-      "cs_entries": 1.36,
-      "cs_volume": 126.973,
-      "cs_pnl_sem": 40.694
+      "cs_pnl": -139.36,
+      "mm_pnl": 7907.187,
+      "mm_markout_vs_cs": 156.399,
+      "mm_markout_vs_noise": 12245.098,
+      "mm_spread_vs_noise": 12218.255,
+      "cs_entries": 0.813,
+      "cs_volume": 82.92,
+      "cs_pnl_sem": 35.809
     },
     {
       "feed_delay": 8.0,
@@ -587,14 +587,14 @@
       "latency": 2.882,
       "mm_audio_guard": false,
       "mm_guard_threshold": 0.6,
-      "cs_pnl": 71.813,
-      "mm_pnl": 7923.307,
-      "mm_markout_vs_cs": -71.592,
-      "mm_markout_vs_noise": 12253.062,
-      "mm_spread_vs_noise": 12226.73,
-      "cs_entries": 0.773,
-      "cs_volume": 83.16,
-      "cs_pnl_sem": 68.941
+      "cs_pnl": 114.92,
+      "mm_pnl": 7879.253,
+      "mm_markout_vs_cs": -115.268,
+      "mm_markout_vs_noise": 12253.057,
+      "mm_spread_vs_noise": 12226.711,
+      "cs_entries": 0.507,
+      "cs_volume": 59.68,
+      "cs_pnl_sem": 73.213
     },
     {
       "feed_delay": 8.0,
@@ -602,14 +602,14 @@
       "latency": 2.882,
       "mm_audio_guard": false,
       "mm_guard_threshold": 0.6,
-      "cs_pnl": 23.587,
-      "mm_pnl": 7807.187,
-      "mm_markout_vs_cs": -26.876,
-      "mm_markout_vs_noise": 12247.491,
-      "mm_spread_vs_noise": 12219.972,
-      "cs_entries": 0.28,
-      "cs_volume": 31.413,
-      "cs_pnl_sem": 41.236
+      "cs_pnl": 49.12,
+      "mm_pnl": 7781.587,
+      "mm_markout_vs_cs": -50.1,
+      "mm_markout_vs_noise": 12247.425,
+      "mm_spread_vs_noise": 12219.906,
+      "cs_entries": 0.147,
+      "cs_volume": 18.68,
+      "cs_pnl_sem": 45.324
     },
     {
       "feed_delay": 8.0,
@@ -617,14 +617,14 @@
       "latency": 2.882,
       "mm_audio_guard": false,
       "mm_guard_threshold": 0.6,
-      "cs_pnl": 47.12,
-      "mm_pnl": 7783.72,
-      "mm_markout_vs_cs": -46.546,
-      "mm_markout_vs_noise": 12247.558,
-      "mm_spread_vs_noise": 12220.039,
-      "cs_entries": 0.2,
-      "cs_volume": 21.093,
-      "cs_pnl_sem": 44.958
+      "cs_pnl": 63.587,
+      "mm_pnl": 7767.12,
+      "mm_markout_vs_cs": -60.923,
+      "mm_markout_vs_noise": 12247.425,
+      "mm_spread_vs_noise": 12219.906,
+      "cs_entries": 0.107,
+      "cs_volume": 13.16,
+      "cs_pnl_sem": 44.013
     },
     {
       "feed_delay": 8.0,
@@ -647,14 +647,14 @@
       "latency": 2.882,
       "mm_audio_guard": false,
       "mm_guard_threshold": 0.6,
-      "cs_pnl": 95.507,
-      "mm_pnl": 7922.253,
-      "mm_markout_vs_cs": -114.04,
-      "mm_markout_vs_noise": 12284.53,
-      "mm_spread_vs_noise": 12224.699,
-      "cs_entries": 1.533,
-      "cs_volume": 153.253,
-      "cs_pnl_sem": 96.66
+      "cs_pnl": 136.667,
+      "mm_pnl": 7876.56,
+      "mm_markout_vs_cs": -151.092,
+      "mm_markout_vs_noise": 12284.697,
+      "mm_spread_vs_noise": 12224.814,
+      "cs_entries": 1.28,
+      "cs_volume": 133.533,
+      "cs_pnl_sem": 98.941
     },
     {
       "feed_delay": 12.0,
@@ -677,14 +677,14 @@
       "latency": 2.882,
       "mm_audio_guard": true,
       "mm_guard_threshold": 0.4,
-      "cs_pnl": 64.96,
-      "mm_pnl": 8173.773,
-      "mm_markout_vs_cs": -35.43,
-      "mm_markout_vs_noise": 12264.153,
-      "mm_spread_vs_noise": 12209.361,
-      "cs_entries": 0.893,
-      "cs_volume": 81.573,
-      "cs_pnl_sem": 79.206
+      "cs_pnl": 36.467,
+      "mm_pnl": 8198.0,
+      "mm_markout_vs_cs": -49.886,
+      "mm_markout_vs_noise": 12264.261,
+      "mm_spread_vs_noise": 12209.444,
+      "cs_entries": 0.773,
+      "cs_volume": 74.347,
+      "cs_pnl_sem": 71.641
     },
     {
       "feed_delay": 12.0,
@@ -692,14 +692,14 @@
       "latency": 2.882,
       "mm_audio_guard": false,
       "mm_guard_threshold": 0.6,
-      "cs_pnl": 101.053,
-      "mm_pnl": 7923.107,
-      "mm_markout_vs_cs": -104.818,
-      "mm_markout_vs_noise": 12285.295,
-      "mm_spread_vs_noise": 12224.454,
-      "cs_entries": 0.747,
-      "cs_volume": 81.053,
-      "cs_pnl_sem": 74.883
+      "cs_pnl": 126.08,
+      "mm_pnl": 7898.12,
+      "mm_markout_vs_cs": -129.907,
+      "mm_markout_vs_noise": 12285.335,
+      "mm_spread_vs_noise": 12224.494,
+      "cs_entries": 0.587,
+      "cs_volume": 67.373,
+      "cs_pnl_sem": 77.941
     },
     {
       "feed_delay": 12.0,
@@ -707,14 +707,14 @@
       "latency": 2.882,
       "mm_audio_guard": false,
       "mm_guard_threshold": 0.6,
-      "cs_pnl": 61.0,
-      "mm_pnl": 7794.653,
-      "mm_markout_vs_cs": -64.18,
-      "mm_markout_vs_noise": 12277.674,
-      "mm_spread_vs_noise": 12217.744,
-      "cs_entries": 0.293,
-      "cs_volume": 35.067,
-      "cs_pnl_sem": 45.456
+      "cs_pnl": 78.667,
+      "mm_pnl": 7776.92,
+      "mm_markout_vs_cs": -80.38,
+      "mm_markout_vs_noise": 12277.607,
+      "mm_spread_vs_noise": 12217.677,
+      "cs_entries": 0.213,
+      "cs_volume": 26.133,
+      "cs_pnl_sem": 49.506
     },
     {
       "feed_delay": 12.0,
@@ -722,14 +722,14 @@
       "latency": 2.882,
       "mm_audio_guard": false,
       "mm_guard_threshold": 0.6,
-      "cs_pnl": 63.733,
-      "mm_pnl": 7791.987,
-      "mm_markout_vs_cs": -63.159,
-      "mm_markout_vs_noise": 12277.74,
-      "mm_spread_vs_noise": 12217.81,
-      "cs_entries": 0.213,
-      "cs_volume": 23.68,
-      "cs_pnl_sem": 45.84
+      "cs_pnl": 75.533,
+      "mm_pnl": 7780.053,
+      "mm_markout_vs_cs": -73.602,
+      "mm_markout_vs_noise": 12277.607,
+      "mm_spread_vs_noise": 12217.677,
+      "cs_entries": 0.16,
+      "cs_volume": 17.947,
+      "cs_pnl_sem": 45.259
     },
     {
       "feed_delay": 12.0,
@@ -752,14 +752,14 @@
       "latency": 2.882,
       "mm_audio_guard": false,
       "mm_guard_threshold": 0.6,
-      "cs_pnl": 111.667,
-      "mm_pnl": 7907.467,
-      "mm_markout_vs_cs": -125.511,
-      "mm_markout_vs_noise": 12321.571,
-      "mm_spread_vs_noise": 12225.75,
-      "cs_entries": 1.44,
-      "cs_volume": 145.373,
-      "cs_pnl_sem": 96.706
+      "cs_pnl": 126.627,
+      "mm_pnl": 7892.573,
+      "mm_markout_vs_cs": -139.769,
+      "mm_markout_vs_noise": 12321.638,
+      "mm_spread_vs_noise": 12225.817,
+      "cs_entries": 1.333,
+      "cs_volume": 137.907,
+      "cs_pnl_sem": 98.953
     },
     {
       "feed_delay": 20.0,
@@ -782,14 +782,14 @@
       "latency": 2.882,
       "mm_audio_guard": true,
       "mm_guard_threshold": 0.4,
-      "cs_pnl": 30.173,
-      "mm_pnl": 8213.36,
-      "mm_markout_vs_cs": -27.472,
-      "mm_markout_vs_noise": 12287.668,
-      "mm_spread_vs_noise": 12204.665,
-      "cs_entries": 0.827,
-      "cs_volume": 78.333,
-      "cs_pnl_sem": 70.45
+      "cs_pnl": 16.32,
+      "mm_pnl": 8227.24,
+      "mm_markout_vs_cs": -30.006,
+      "mm_markout_vs_noise": 12287.695,
+      "mm_spread_vs_noise": 12204.692,
+      "cs_entries": 0.8,
+      "cs_volume": 77.04,
+      "cs_pnl_sem": 68.164
     },
     {
       "feed_delay": 20.0,
@@ -797,14 +797,14 @@
       "latency": 2.882,
       "mm_audio_guard": false,
       "mm_guard_threshold": 0.6,
-      "cs_pnl": 86.853,
-      "mm_pnl": 7941.853,
-      "mm_markout_vs_cs": -88.749,
-      "mm_markout_vs_noise": 12322.562,
-      "mm_spread_vs_noise": 12225.784,
-      "cs_entries": 0.707,
-      "cs_volume": 78.227,
-      "cs_pnl_sem": 74.04
+      "cs_pnl": 99.987,
+      "mm_pnl": 7928.853,
+      "mm_markout_vs_cs": -102.354,
+      "mm_markout_vs_noise": 12322.696,
+      "mm_spread_vs_noise": 12225.917,
+      "cs_entries": 0.613,
+      "cs_volume": 70.893,
+      "cs_pnl_sem": 77.371
     },
     {
       "feed_delay": 20.0,
@@ -812,14 +812,14 @@
       "latency": 2.882,
       "mm_audio_guard": false,
       "mm_guard_threshold": 0.6,
-      "cs_pnl": 69.28,
-      "mm_pnl": 7791.573,
-      "mm_markout_vs_cs": -72.3,
-      "mm_markout_vs_noise": 12314.113,
-      "mm_spread_vs_noise": 12218.195,
-      "cs_entries": 0.28,
-      "cs_volume": 33.2,
-      "cs_pnl_sem": 45.251
+      "cs_pnl": 77.08,
+      "mm_pnl": 7783.8,
+      "mm_markout_vs_cs": -78.847,
+      "mm_markout_vs_noise": 12314.14,
+      "mm_spread_vs_noise": 12218.222,
+      "cs_entries": 0.24,
+      "cs_volume": 29.6,
+      "cs_pnl_sem": 50.2
     },
     {
       "feed_delay": 20.0,
@@ -827,14 +827,14 @@
       "latency": 2.882,
       "mm_audio_guard": false,
       "mm_guard_threshold": 0.6,
-      "cs_pnl": 72.28,
-      "mm_pnl": 7788.973,
-      "mm_markout_vs_cs": -71.501,
-      "mm_markout_vs_noise": 12314.159,
-      "mm_spread_vs_noise": 12218.246,
-      "cs_entries": 0.2,
-      "cs_volume": 21.813,
-      "cs_pnl_sem": 45.763
+      "cs_pnl": 74.213,
+      "mm_pnl": 7787.0,
+      "mm_markout_vs_cs": -72.291,
+      "mm_markout_vs_noise": 12314.119,
+      "mm_spread_vs_noise": 12218.206,
+      "cs_entries": 0.187,
+      "cs_volume": 21.413,
+      "cs_pnl_sem": 46.112
     },
     {
       "feed_delay": 20.0,
@@ -855,27 +855,27 @@
   "radio_delay": [
     {
       "latency": 2.882,
-      "cs_pnl": 59.907,
-      "cs_pnl_sem": 94.873,
-      "cs_entries": 1.587
+      "cs_pnl": 122.493,
+      "cs_pnl_sem": 98.402,
+      "cs_entries": 1.227
     },
     {
       "latency": 3.882,
-      "cs_pnl": -35.187,
-      "cs_pnl_sem": 95.915,
-      "cs_entries": 1.507
+      "cs_pnl": 39.013,
+      "cs_pnl_sem": 97.122,
+      "cs_entries": 1.12
     },
     {
       "latency": 5.882,
-      "cs_pnl": -170.573,
-      "cs_pnl_sem": 68.706,
-      "cs_entries": 1.427
+      "cs_pnl": -87.867,
+      "cs_pnl_sem": 71.234,
+      "cs_entries": 0.947
     },
     {
       "latency": 8.882,
-      "cs_pnl": -233.213,
-      "cs_pnl_sem": 40.694,
-      "cs_entries": 1.36
+      "cs_pnl": -139.36,
+      "cs_pnl_sem": 35.809,
+      "cs_entries": 0.813
     }
   ],
   "bootstrap_note": "cs_pnl_sem is the standard error across matches"

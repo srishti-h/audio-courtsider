@@ -16,22 +16,25 @@ All numbers are on held-out data: SoccerNet **test** split (92 matches with comm
 odds for trading). Thresholds and model choices were made on the validation split.
 
 **1. Commentary is worth money only against a slow market.** A courtsider that hears the
-commentary trades against a market maker who reprices on the official feed. Its P&L per match
-(paired across the same 75 matches, relative to a 1 s feed):
+commentary trades against a market maker who reprices on the official feed. P&L per match over the
+same 75 test matches:
 
-| market's feed delay behind the pitch | 2 s | 3 s | 5 s | 8 s | 12 s | 20 s |
-|---|---|---|---|---|---|---|
-| courtsider gain ($ / match) | −0.01 ± 0.00 | +0.02 ± 0.02 | **+2.02 ± 0.79** | **+2.92 ± 0.88** | **+3.27 ± 0.90** | **+3.44 ± 0.96** |
+| market's feed delay behind the pitch | 1–3 s | 5 s | 8 s | 12 s | 20 s |
+|---|---|---|---|---|---|
+| courtsider P&L ($ / match) | −1.48 ± 0.37 | +0.47 ± 0.90 | +1.22 ± 0.98 | +1.37 ± 0.99 | +1.27 ± 0.99 |
+| gain vs a 1 s feed (paired) | – | **+1.95 ± 0.78** | **+2.71 ± 0.88** | **+2.85 ± 0.88** | **+2.75 ± 0.93** |
 
-Against a fast (≤3 s) data feed the courtsider *loses* $2.32 ± 0.39 per match: by the time
-commentary confirms a goal the price has already moved, and false alarms cost the spread. The
-edge switches on at ~5 s, i.e. against books priced off TV pictures (5–8 s behind) or streams.
+Against a fast (≤3 s) data feed the courtsider *loses* money: commentary usually confirms a goal
+after the price has already moved, so its only trades are false alarms (~0.8 per match), each
+costing the spread. The edge switches on at ~5 s, i.e. against books priced off TV pictures
+(5–8 s behind) or streams. The courtsider ignores commentary about an event the feed has already
+published in the last 45 s, so a late "goal!" is never mistaken for a second goal.
 
 ![market](results/figures/market.png)
 
 **2. A market maker can defend cheaply, but the bigger threat is the TV.** If the market maker
 runs the same commentary detector and pulls quotes when P(event) ≥ 0.4, it cuts its losses to
-the courtsider by $0.50–0.98 per match at a cost of only $0.15–0.21 of spread revenue; at 0.2 it
+the courtsider by $0.91–1.10 per match at a cost of only $0.15–0.21 of spread revenue; at 0.2 it
 shuts the courtsider out entirely for $0.53–0.57. For comparison, once its feed is slower than TV
 viewers (7 s), slow-but-informed TV traders cost it **$46 ± 4 per match**.
 
