@@ -1,0 +1,65 @@
+{
+  "sessions": [
+    {
+      "match": "Atl\u00e9tico Madrid vs Manchester United",
+      "started": "2026-10-13T12:26:15",
+      "feed": "espn",
+      "audio_minutes": 22.0,
+      "feed_goals": 10,
+      "goals": [
+        {
+          "clock": "27'",
+          "team": "home",
+          "text_lead_s": 15.8
+        },
+        {
+          "clock": "29'",
+          "team": "home"
+        },
+        {
+          "clock": "35'",
+          "team": "home"
+        },
+        {
+          "clock": "44'",
+          "team": "away"
+        },
+        {
+          "clock": "44'",
+          "team": "home"
+        },
+        {
+          "clock": "51'",
+          "team": "away"
+        },
+        {
+          "clock": "53'",
+          "team": "away"
+        },
+        {
+          "clock": "66'",
+          "team": "away"
+        },
+        {
+          "clock": "80'",
+          "team": "home"
+        },
+        {
+          "clock": "87'",
+          "team": "home"
+        }
+      ],
+      "false_alarms": {
+        "text": 8,
+        "crowd": 0
+      }
+    }
+  ],
+  "n_sessions": 1,
+  "n_feed_goals": 10,
+  "audio_minutes": 22.0,
+  "text_beats_feed": "1/10",
+  "crowd_beats_feed": "0/10",
+  "text_lead_s_median": 15.8,
+  "crowd_lead_s_median": null
+}

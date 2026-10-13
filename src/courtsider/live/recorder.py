@@ -134,37 +134,31 @@ class Session:
                 self.emit(events)
                 self.snaps[mid] = cur
 
-    def run(self, stop: threading.Event) -> None:
-        ff = subprocess.Popen(
-            [
-                "ffmpeg",
-                "-loglevel",
-                "error",
-                "-reconnect",
-                "1",
-                "-reconnect_streamed",
-                "1",
-                "-i",
-                STATIONS[self.station],
-                "-ac",
-                "1",
-                "-ar",
-                "16000",
-                "-f",
-                "f32le",
-                "-",
-            ],
+    def _ffmpeg(self) -> subprocess.Popen:
+        url = STATIONS[self.station]
+        net = (
+            ["-rw_timeout", "10000000", "-reconnect", "1", "-reconnect_streamed", "1"] if url.startswith("http") else []
+        )
+        return subprocess.Popen(
+            ["ffmpeg", "-loglevel", "error", *net, "-i", url, "-ac", "1", "-ar", "16000", "-f", "f32le", "-"],
             stdout=subprocess.PIPE,
         )
+
+    def run(self, stop: threading.Event) -> None:
+        procs = [self._ffmpeg()]
         threading.Thread(target=self.watch_feed, args=(stop,), daemon=True).start()
         buf: list[np.ndarray] = []
         cond = threading.Condition()
 
         def reader():  # keep pulling audio while a tick runs, so we never fall behind real time
             while not stop.is_set():
-                raw = ff.stdout.read(int(16000 * TICK_S) * 4)
-                if not raw:
-                    stop.set()
+                raw = procs[-1].stdout.read(int(16000 * TICK_S) * 4)
+                if not raw:  # stream stalled (>10 s, -rw_timeout) or dropped: reconnect, never end the session
+                    procs[-1].kill()
+                    self.emit([dict(kind="stream_restart", wall=time.time())])
+                    time.sleep(2)
+                    procs.append(self._ffmpeg())
+                    continue
                 with cond:
                     buf.append(np.frombuffer(raw, dtype=np.float32))
                     cond.notify()
@@ -179,7 +173,7 @@ class Session:
                     self.pipe.feed(np.concatenate(chunks))  # everything that arrived during the last tick
                     self.emit([e for e in self.pipe.tick() if e["kind"] in ("segment", "detection", "status")])
         finally:
-            ff.terminate()
+            procs[-1].terminate()
             self.log.close()
 
 

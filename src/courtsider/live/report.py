@@ -2,7 +2,8 @@
 
 python -m courtsider.live.report            # summarises data/live/*.jsonl -> results/live.json
 
-A detection "beats" a feed goal if it fired in the WINDOW seconds before the feed reported it.
+A detection "beats" a feed goal if it fired in the WINDOW seconds before the feed reported it; the
+closest such detection is used, so unrelated earlier chatter never inflates the lead.
 Lead = feed wall time - detection wall time (positive = commentary was first).
 """
 
@@ -41,7 +42,7 @@ def summarize(events: list[dict]) -> dict:
                 and (src == "crowd" or d.get("event") == "goal")
             ]
             if cands:
-                i, d = min(cands, key=lambda x: x[1]["wall"])
+                i, d = max(cands, key=lambda x: x[1]["wall"])  # the call closest before the feed (conservative)
                 used[src].add(i)
                 row[f"{src}_lead_s"] = round(f["wall"] - d["wall"], 1)
         goals.append(row)

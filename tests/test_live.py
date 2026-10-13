@@ -45,3 +45,43 @@ def test_fast_text_detections_count_as_text():
         dict(kind="feed", event="goal", team="home", clock="27'", wall=76.5),
     ]
     assert summarize(events)["goals"][0]["text_lead_s"] == 15.7
+
+
+def test_recorder_reconnects_when_the_stream_drops(tmp_path, monkeypatch):
+    import subprocess
+    import threading
+    import time as _time
+
+    from courtsider.live import recorder
+
+    wav = tmp_path / "s.wav"  # a 2 s "stream" that ends, so the recorder has to reconnect
+    subprocess.run(
+        ["ffmpeg", "-loglevel", "error", "-f", "lavfi", "-i", "sine=f=440:d=2", "-ar", "16000", str(wav)], check=True
+    )
+    monkeypatch.setitem(recorder.STATIONS, "test", str(wav))
+    monkeypatch.setattr(recorder, "LIVE_DIR", tmp_path)
+
+    class FakeFeed:
+        def snapshot(self, mid):
+            return Snapshot(mid, "H", "A", (0, 0), "1'", "in", {"home": ["Ana Ruiz"], "away": ["Bo Lee"]})
+
+    class FakePipe:
+        seconds = 0.0
+
+        def __init__(self, *a, **k):
+            pass
+
+        def feed(self, chunk):
+            FakePipe.seconds += len(chunk) / 16000
+
+        def tick(self):
+            return [dict(kind="status", wall=_time.time(), audio_seconds=FakePipe.seconds)]
+
+    monkeypatch.setattr(recorder, "EspnFeed", FakeFeed)
+    monkeypatch.setattr(recorder, "LivePipeline", FakePipe)
+    s = recorder.Session("test", [dict(id="1")])
+    stop = threading.Event()
+    threading.Timer(7.0, stop.set).start()
+    s.run(stop)
+    log = (next(tmp_path.glob("*_radio-test.jsonl"))).read_text()
+    assert log.count("stream_restart") >= 2 and FakePipe.seconds >= 4.0
