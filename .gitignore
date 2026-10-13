@@ -5,8 +5,8 @@ __pycache__/
 .ruff_cache/
 .hypothesis/
 .benchmarks/
-data/
-!data/README.md
+/data/*
+!/data/README.md
 node_modules/
 web/dist/
 *.wav
