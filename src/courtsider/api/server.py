@@ -4,6 +4,7 @@
   GET  /api/results               headline experiment results (results/*.json)
   WS   /ws/replay?game_id=...     runs a deterministic simulation, then streams its tape in
                                   (scaled) real time: transcript, beliefs, feed, books, trades, P&L
+  live mode (mic / stream audio + live-score feed): see courtsider.api.live
 
 Run: uvicorn courtsider.api.server:app --port 8000   (the React app proxies /api and /ws)
 """
@@ -21,12 +22,14 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from courtsider.api.live import router as live_router
 from courtsider.data.taxonomy import split_global
 from courtsider.paths import PROCESSED, RESULTS, ROOT
 from courtsider.sim.match import MatchSim, SimConfig
 from courtsider.sim.signals import PricerFactory, final_score, signals_for_game
 
 app = FastAPI(title="Audio Courtsider")
+app.include_router(live_router)
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173"], allow_methods=["*"], allow_headers=["*"])
 
 
@@ -72,7 +75,7 @@ def list_games() -> list[dict]:
 @app.get("/api/results")
 def results() -> dict:
     out = {}
-    for name in ("text_eval", "asr", "market", "pricing", "bench"):
+    for name in ("text_eval", "asr", "market", "pricing", "bench", "real_audio", "live"):
         p = RESULTS / f"{name}.json"
         if p.exists():
             out[name] = json.loads(p.read_text())
@@ -130,8 +133,8 @@ async def replay(ws: WebSocket):
     speed = float(q.get("speed", 5))
     start = float(q.get("start", 0))
     tape, meta = await asyncio.to_thread(build_tape, q["game_id"], cfg)
-    await ws.send_json(_clean(dict(kind="meta", **meta)))
     try:
+        await ws.send_json(_clean(dict(kind="meta", **meta)))
         prev = None
         for x in tape:
             if x["t"] < start:

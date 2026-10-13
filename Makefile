@@ -1,4 +1,4 @@
-.PHONY: setup data train eval bench test serve web lint screenshot demo gif
+.PHONY: setup data train eval bench test serve web lint screenshot demo gif live-report
 
 setup:            ## install Python + web dependencies
 	uv sync
@@ -38,3 +38,6 @@ demo:             ## static GitHub Pages build: pre-computed replays -> web/publ
 
 gif:              ## README GIF (needs `cd web && npx vite preview --base /audio-courtsider/` on :4173, Google Chrome)
 	uv run python scripts/record_gif.py
+
+live-report:      ## lead time of live commentary detections over the live-score feed (data/live -> results/live.json)
+	uv run python -m courtsider.live.report

@@ -100,6 +100,63 @@ def drop_repeats(words: list[Word], max_ngram: int = 4, max_repeats: int = 2) ->
     return out
 
 
+class LocalAgreement:
+    """Incremental streaming state: append audio as it arrives, call `process()` about once a second.
+
+    Used both by the offline simulation (`stream`) and by the live pipeline. Audio before the
+    re-transcription buffer is dropped, so memory stays bounded during a 90-minute match.
+    """
+
+    def __init__(
+        self, model: str = "small", vocabulary: list[str] | None = None, max_buffer: float = 12.0, transcribe=None
+    ):
+        self.repo = MODELS.get(model, model)
+        self.max_buffer = max_buffer
+        self.transcribe = transcribe or _hypothesis
+        self.base_prompt = ("Football commentary. Players: " + ", ".join(vocabulary) + ".") if vocabulary else None
+        self.committed: list[Word] = []
+        self.prev: list[Word] = []
+        self.buf_start = 0.0
+        self.offset = 0.0  # audio time of self.audio[0]
+        self.audio = np.zeros(0, dtype=np.float32)
+
+    def append(self, chunk: np.ndarray) -> None:
+        self.audio = np.concatenate([self.audio, chunk.astype(np.float32)])
+
+    @property
+    def t_avail(self) -> float:
+        return self.offset + len(self.audio) / SR
+
+    def process(self, final: bool = False) -> tuple[list[Word], float]:
+        """Re-transcribe the buffer; return (newly committed words, compute seconds). Caller stamps `emit`."""
+        audio = self.audio[int((self.buf_start - self.offset) * SR) :]
+        tail = " ".join(w.text.strip() for w in self.committed[-8:])
+        prompt = " ".join(p for p in (self.base_prompt, tail) if p) or None
+        t0 = time.perf_counter()
+        hyp = self.transcribe(audio, self.buf_start, self.repo, prompt) if len(audio) > SR * 0.3 else []
+        compute = time.perf_counter() - t0
+        last_end = self.committed[-1].end if self.committed else 0.0
+        new = _strip_overlap(self.committed, [w for w in hyp if w.start >= last_end - 0.05])
+        old = _strip_overlap(self.committed, [w for w in self.prev if w.start >= last_end - 0.05])
+        agreed = []
+        for a, b in zip(new, old, strict=False):
+            if a.norm != b.norm or not a.norm:
+                break
+            agreed.append(a)
+        if final:  # flush everything at the end of the audio
+            agreed = new
+        self.committed.extend(agreed)
+        self.prev = hyp
+        # trim the buffer at the last committed word once it grows too long
+        if self.t_avail - self.buf_start > self.max_buffer and self.committed:
+            self.buf_start = max(self.buf_start, self.committed[-1].end)
+            self.prev = [w for w in self.prev if w.start >= self.buf_start]
+            drop = int((self.buf_start - self.offset) * SR)
+            if drop > 0:
+                self.audio, self.offset = self.audio[drop:], self.offset + drop / SR
+        return agreed, compute
+
+
 def stream(
     y: np.ndarray,
     model: str = "turbo",
@@ -107,50 +164,25 @@ def stream(
     max_buffer: float = 12.0,
     vocabulary: list[str] | None = None,
 ) -> StreamResult:
-    """Simulate live streaming over audio `y`; `vocabulary` biases decoding (e.g. team-sheet names)."""
-    repo = MODELS.get(model, model)
+    """Simulate live streaming over audio `y` on a virtual clock that advances by real compute time."""
+    la = LocalAgreement(model, vocabulary, max_buffer)
+    result = StreamResult(la.committed)
     dur = len(y) / SR
-    committed: list[Word] = []
-    prev: list[Word] = []
-    buf_start = 0.0
     clock = step
-    result = StreamResult(committed)
-    base_prompt = ("Football commentary. Players: " + ", ".join(vocabulary) + ".") if vocabulary else None
     while True:
         t_avail = min(clock, dur)
-        audio = y[int(buf_start * SR) : int(t_avail * SR)].astype(np.float32)
-        tail = " ".join(w.text.strip() for w in committed[-8:])
-        prompt = " ".join(p for p in (base_prompt, tail) if p) or None
-        t0 = time.perf_counter()
-        hyp = _hypothesis(audio, buf_start, repo, prompt) if len(audio) > SR * 0.3 else []
-        compute = time.perf_counter() - t0
-        result.compute_times.append(compute)
-        last_end = committed[-1].end if committed else 0.0
-        new = _strip_overlap(committed, [w for w in hyp if w.start >= last_end - 0.05])
-        old = _strip_overlap(committed, [w for w in prev if w.start >= last_end - 0.05])
-        agreed = []
-        for a, b in zip(new, old, strict=False):
-            if a.norm != b.norm or not a.norm:
-                break
-            agreed.append(a)
+        la.append(y[int(la.t_avail * SR) : int(t_avail * SR)])
         final = t_avail >= dur
-        if final:  # flush everything at end of audio
-            agreed = new
+        agreed, compute = la.process(final)
+        result.compute_times.append(compute)
         emit = t_avail + compute
         for w in agreed:
             w.emit = emit
         if agreed:
-            committed.extend(agreed)
             result.chunks.append((emit, agreed))
-        prev = hyp
         if final:
-            break
-        # trim the buffer at the last committed word once it grows too long
-        if t_avail - buf_start > max_buffer and committed:
-            buf_start = max(buf_start, committed[-1].end)
-            prev = [w for w in prev if w.start >= buf_start]
+            return result
         clock = t_avail + max(step, compute)
-    return result
 
 
 # ---- evaluation helpers -----------------------------------------------------------------
