@@ -75,7 +75,18 @@ def list_games() -> list[dict]:
 @app.get("/api/results")
 def results() -> dict:
     out = {}
-    for name in ("text_eval", "asr", "market", "pricing", "bench", "real_audio", "live"):
+    for name in (
+        "text_eval",
+        "asr",
+        "market",
+        "pricing",
+        "bench",
+        "real_audio",
+        "live",
+        "audio_goal",
+        "market_audio",
+        "fast_text",
+    ):
         p = RESULTS / f"{name}.json"
         if p.exists():
             out[name] = json.loads(p.read_text())

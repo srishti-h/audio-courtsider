@@ -102,7 +102,17 @@ def main() -> None:
         print(entry["label"], len(entry["goals"]), "goals")
     (OUT / "index.json").write_text(json.dumps(dict(matches=index, feed_delays=FEED_DELAYS, threshold=THRESHOLD)))
     results = {}
-    for name in ("text_eval", "asr", "market", "pricing", "bench", "real_audio"):
+    for name in (
+        "text_eval",
+        "asr",
+        "market",
+        "pricing",
+        "bench",
+        "real_audio",
+        "audio_goal",
+        "market_audio",
+        "fast_text",
+    ):
         p = RESULTS / f"{name}.json"
         if p.exists():
             results[name] = json.loads(p.read_text())

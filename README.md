@@ -15,6 +15,32 @@ market's feed delay to watch the edge appear or vanish.
 All numbers are on held-out data: SoccerNet **test** split (92 matches with commentary, 75 with
 odds for trading). Thresholds and model choices were made on the validation split.
 
+**Headline: listen to the crowd, not just the words.** A small causal network trained on the
+broadcast audio of 500 matches hears a goal a median **2.4 s** after it happens (67 % of goals,
+62 % precision, ~1 false alarm per match). Trading on it earns **+$5.6 per match against a market
+2 s behind the broadcast and +$15.7 at 5 s**, versus −$1.5 and +$0.5 for commentary text alone:
+
+| market's feed delay (behind the broadcast) | 1 s | 2 s | 3 s | 5 s | 8 s | 12 s |
+|---|---|---|---|---|---|---|
+| bot on commentary text ($ / match) | −1.48 | −1.48 | −1.45 | +0.47 | +1.23 | +1.37 |
+| **bot on the learned audio detector** | −0.10 | **+5.60** | **+10.32** | **+15.72** | **+16.49** | **+16.50** |
+| bot on text + audio | −1.40 | +4.29 | +8.94 | +14.68 | +16.10 | +16.26 |
+
+(±$2 standard error across the 75 matches for the audio rows, ±$0.4–1.0 for text.) Adding text to
+audio doesn't help: its extra false alarms cost more than its extra catches earn.
+
+![signal sources](results/figures/market_audio.png)
+
+**0. Hearing goals faster** (detection on the test split; time after the labelled goal):
+
+| detector | data | goals caught | median delay | false alarms / min |
+|---|---|---|---|---|
+| commentary text, confirmed sentences | 30 goals, real broadcast audio | 23 % | 11.1 s | 0.075 |
+| commentary text, **fast path** (0.5 s step, scores unconfirmed words) | same | 57 % | 5.7 s | 0.15 |
+| hand-built crowd-roar rule | 30 goals, real audio | 23 % | 0.6 s | 0.22 |
+| **learned audio goal detector** (causal TCN on log-mel) | 309 goals, 188 halves | **67 %** | **2.4 s** | **0.015** |
+| same detector, lower threshold (0.2) | same | 85 % | 1.1 s | 0.087 |
+
 **1. Commentary is worth money only against a slow market.** A courtsider that hears the
 commentary trades against a market maker who reprices on the official feed. P&L per match over the
 same 75 test matches:
@@ -105,6 +131,14 @@ audio: a **browser tab** streaming the game, your **microphone** near a TV or ra
 * P(goal / penalty / red card) and which team, plus the crowd-roar level,
 * every detection, and when the feed reports a goal, **how many seconds the commentary beat it by**.
 
+**Unattended Spanish radio.** `python -m courtsider.live.recorder` (or `scripts/recorder_agent.sh
+install` to run it in the background) watches ESPN for live La Liga and Spanish-club European
+matches and, while one is on, streams Cadena SER's commentary through Whisper translating Spanish to
+English, with both lineups as vocabulary, and logs detections against the live feed. First live
+session (Champions League, 13 Oct 2026): Villarreal's goal vs Napoli was called on air and flagged
+**15.8 s before ESPN's feed**; the stream dropped for most of that night (the recorder now
+reconnects automatically) and multi-match radio produces more false alarms than single-match TV.
+
 Sessions are logged to `data/live/` (text and detections only, no audio). Then
 `python -m courtsider.live.report` summarises lead times across every match you've listened to
 (`results/live.json`). Text play-by-play sites (FotMob, ESPN) aren't used as "commentary": their
@@ -135,6 +169,14 @@ text is generated from the same data feed, so it can never be ahead of it.
 | **Dashboard** (`api/`, `web/`) | watch it happen | FastAPI streams a deterministic simulation over a WebSocket to a React app: transcript, belief meters, five order books, a "who knew first" timeline and P&L |
 
 ## Honest limitations
+
+* **"Feed delay" is measured against the broadcast, not the stadium.** SoccerNet's event times are
+  on the broadcast timeline, so every lead here is relative to the audio you are listening to. A TV
+  broadcast itself runs ~5–10 s behind the stadium, while official data scouts sit in the stadium.
+  The audio edge is real only when your audio source is at least as fast as the market's feed
+  (stadium-side radio, a low-latency broadcast, or a market fed by TV pictures).
+* **The audio detector can't tell which team scored**, so the bot trades it as a 50/50 home/away
+  split; its profit comes from contracts that move on *any* goal (over 2.5, both-teams-score, draw).
 
 * **Timing on real commentary comes from offline transcripts.** SoccerNet-Echoes timestamps are
   Whisper *segment* times, not live word times, and drift a few seconds against the video

@@ -259,13 +259,15 @@ export function useResults() {
 
 export function Kpis({ r }: { r: any }) {
   if (!r) return null
-  const goal = (r.text_eval?.detection_test ?? []).find((d: any) => d.event === 'goal' && d.method === r.text_eval.fusion_selected)
+  const audio = r.audio_goal?.test_at_selected
+  const audioPnl = (r.market_audio?.summary ?? []).find((x: any) => x.source === 'audio' && x.feed_delay === 5)
   const gain = r.market?.paired_dollars_per_match?.['cs_gain_feed_12s_vs_1s']
   return (
     <div className="kpis">
-      {gain && <div className="kpi"><b>+${gain.mean.toFixed(2)}</b><span>per match vs a TV-delayed market (±{gain.sem.toFixed(2)}, 75 matches)</span></div>}
-      {r.real_audio && <div className="kpi"><b>{r.real_audio.roar_goal_delay_p50.toFixed(1)}s</b><span>crowd roar after a goal on real broadcasts, vs {r.real_audio.text_goal_delay_p50.toFixed(1)}s for words</span></div>}
-      {goal && <div className="kpi"><b>{Math.round(goal.precision * 100)}%</b><span>precision of goal calls from commentary text ({Math.round(goal.recall * 100)}% recall)</span></div>}
+      {audio && <div className="kpi"><b>{audio.delay_p50.toFixed(1)}s</b><span>median time to hear a goal: learned crowd + commentator audio model ({Math.round(audio.recall * 100)}% of goals)</span></div>}
+      {audioPnl && <div className="kpi"><b>+${audioPnl.cs_pnl.toFixed(1)}</b><span>per match for the audio bot vs a market 5 s behind the broadcast (75 matches)</span></div>}
+      {!audioPnl && gain && <div className="kpi"><b>+${gain.mean.toFixed(2)}</b><span>per match vs a TV-delayed market (±{gain.sem.toFixed(2)}, 75 matches)</span></div>}
+      {r.fast_text && <div className="kpi"><b>{r.fast_text['fast (0.5 s step + speculative)'].delay_p50.toFixed(1)}s</b><span>commentary text, fast path, on real broadcasts ({Math.round(r.fast_text['fast (0.5 s step + speculative)'].recall * 100)}% of goals)</span></div>}
       {r.bench && <div className="kpi"><b>{r.bench.exchange.p50_us.toFixed(1)}µs</b><span>median matching latency of the Python exchange</span></div>}
     </div>
   )
@@ -278,7 +280,7 @@ export function EdgeTable({ r }: { r: any }) {
   const max = Math.max(...rows.map(([, v]) => v.mean), 1)
   return (
     <table className="edge-table">
-      <thead><tr><th>Market's feed delay</th><th>Bot's gain vs a 1 s feed ($ / match)</th><th style={{ width: '40%' }} /></tr></thead>
+      <thead><tr><th>Market's feed delay</th><th>Text bot's gain vs a 1 s feed ($ / match)</th><th style={{ width: '40%' }} /></tr></thead>
       <tbody>
         {rows.map(([k, v]) => (
           <tr key={k}>
