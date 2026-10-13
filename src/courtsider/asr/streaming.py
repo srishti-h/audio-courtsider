@@ -50,14 +50,18 @@ class StreamResult:
         return " ".join(w.text.strip() for w in self.words)
 
 
-def _hypothesis(audio: np.ndarray, offset: float, repo: str, prompt: str | None) -> list[Word]:
+def _hypothesis(
+    audio: np.ndarray, offset: float, repo: str, prompt: str | None, language: str = "en", task: str = "transcribe"
+) -> list[Word]:
+    """One Whisper pass. language="es", task="translate" turns Spanish commentary into English text."""
     import mlx_whisper
 
     res = mlx_whisper.transcribe(
         audio,
         path_or_hf_repo=repo,
         word_timestamps=True,
-        language="en",
+        language=language,
+        task=task,
         # temperature fallback re-decodes when the output is too repetitive (compression ratio)
         temperature=(0.0, 0.2, 0.4, 0.6),
         compression_ratio_threshold=2.0,
@@ -108,11 +112,19 @@ class LocalAgreement:
     """
 
     def __init__(
-        self, model: str = "small", vocabulary: list[str] | None = None, max_buffer: float = 12.0, transcribe=None
+        self,
+        model: str = "small",
+        vocabulary: list[str] | None = None,
+        max_buffer: float = 12.0,
+        transcribe=None,
+        language: str = "en",
+        task: str = "transcribe",
     ):
+        from functools import partial
+
         self.repo = MODELS.get(model, model)
         self.max_buffer = max_buffer
-        self.transcribe = transcribe or _hypothesis
+        self.transcribe = transcribe or partial(_hypothesis, language=language, task=task)
         self.base_prompt = ("Football commentary. Players: " + ", ".join(vocabulary) + ".") if vocabulary else None
         self.committed: list[Word] = []
         self.prev: list[Word] = []
@@ -122,6 +134,11 @@ class LocalAgreement:
 
     def append(self, chunk: np.ndarray) -> None:
         self.audio = np.concatenate([self.audio, chunk.astype(np.float32)])
+
+    def pending(self) -> list[Word]:
+        """Words of the latest hypothesis that are not committed yet (speculative, may still change)."""
+        last_end = self.committed[-1].end if self.committed else 0.0
+        return _strip_overlap(self.committed, [w for w in self.prev if w.start >= last_end - 0.05])
 
     @property
     def t_avail(self) -> float:

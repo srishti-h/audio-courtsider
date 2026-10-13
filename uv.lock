@@ -435,6 +435,7 @@ source = { editable = "." }
 dependencies = [
     { name = "accelerate" },
     { name = "fastapi" },
+    { name = "hf-xet" },
     { name = "huggingface-hub" },
     { name = "librosa" },
     { name = "matplotlib" },
@@ -470,6 +471,7 @@ dev = [
 requires-dist = [
     { name = "accelerate", specifier = ">=1.15.0" },
     { name = "fastapi", specifier = ">=0.142.2" },
+    { name = "hf-xet", specifier = ">=1.6.0" },
     { name = "huggingface-hub", specifier = ">=1.33.0" },
     { name = "librosa", specifier = ">=1.0.0" },
     { name = "matplotlib", specifier = ">=3.11.2" },

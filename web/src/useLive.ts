@@ -3,9 +3,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 export type AudioSource = 'mic' | 'tab' | 'file'
 
 export interface LiveSegment { wall: number; text: string; probs: Record<string, number>; team: { home: number; away: number } }
-export interface LiveDetection { wall: number; source: 'text' | 'crowd'; event: string; p: number | null; team: string | null; text?: string }
+export interface LiveDetection { wall: number; source: 'text' | 'text-fast' | 'crowd' | 'audio'; event: string; p: number | null; team: string | null; text?: string }
 export interface LiveFeedEvent { wall: number; event: string; team: string; score: [number, number]; clock: string }
-export interface Lead { feed: LiveFeedEvent; text?: number; crowd?: number }
+export interface Lead { feed: LiveFeedEvent; text?: number; crowd?: number; audio?: number }
 
 export interface LiveState {
   status: 'idle' | 'connecting' | 'listening' | 'stopped' | 'error'
@@ -19,7 +19,7 @@ export interface LiveState {
   detections: LiveDetection[]
   feed: LiveFeedEvent[]
   leads: Lead[]
-  crowd: { wall: number; z: number; ex: number }[]
+  crowd: { wall: number; z: number; ex: number; pAudio: number | null }[]
   audioSeconds: number
   asrLatency?: number
   vocabulary: string[]
@@ -46,7 +46,7 @@ function reduce(s: LiveState, e: any): LiveState {
     case 'words':
       return { ...s, asrLatency: e.latency }
     case 'acoustic':
-      return { ...s, crowd: [...s.crowd.slice(-299), { wall: e.wall, z: e.crowd_z, ex: e.excitement }] }
+      return { ...s, crowd: [...s.crowd.slice(-299), { wall: e.wall, z: e.crowd_z, ex: e.excitement, pAudio: e.p_goal_audio ?? null }] }
     case 'detection':
       return { ...s, detections: [...s.detections.slice(-49), e] }
     case 'score':
@@ -55,11 +55,12 @@ function reduce(s: LiveState, e: any): LiveState {
       return { ...s, audioSeconds: e.audio_seconds }
     case 'feed': {
       const f: LiveFeedEvent = { wall: e.wall, event: e.event, team: e.team, score: e.score, clock: e.clock }
-      const before = (src: string) => s.detections
-        .filter((d) => d.source === src && (src === 'crowd' || d.event === f.event) && f.wall - d.wall >= 0 && f.wall - d.wall <= 90)
+      const before = (srcs: string[]) => s.detections
+        .filter((d) => srcs.includes(d.source) && (d.source === 'crowd' || d.event === f.event) && f.wall - d.wall >= 0 && f.wall - d.wall <= 90)
         .map((d) => f.wall - d.wall)
-      const lead = (src: string) => { const v = before(src); return v.length ? Math.max(...v) : undefined }
-      return { ...s, score: e.score, feed: [...s.feed, f], leads: [...s.leads, { feed: f, text: lead('text'), crowd: lead('crowd') }] }
+      const lead = (srcs: string[]) => { const v = before(srcs); return v.length ? Math.max(...v) : undefined }
+      return { ...s, score: e.score, feed: [...s.feed, f],
+        leads: [...s.leads, { feed: f, text: lead(['text', 'text-fast']), crowd: lead(['crowd']), audio: lead(['audio']) }] }
     }
     case 'error':
       return { ...s, error: e.message }

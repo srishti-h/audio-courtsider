@@ -26,9 +26,8 @@ def load(path: Path) -> list[dict]:
 def summarize(events: list[dict]) -> dict:
     meta = next((e for e in events if e.get("kind") == "session"), {})
     feed = [e for e in events if e.get("kind") == "feed" and e.get("event") == "goal"]
-    dets = {
-        src: [e for e in events if e.get("kind") == "detection" and e.get("source") == src] for src in ("text", "crowd")
-    }
+    group = {"text": ("text", "text-fast"), "crowd": ("crowd",)}  # fast speculative calls count as text
+    dets = {src: [e for e in events if e.get("kind") == "detection" and e.get("source") in group[src]] for src in group}
     goals = []
     used = {k: set() for k in dets}
     for f in feed:

@@ -10,6 +10,7 @@ requires-python = ">=3.12"
 dependencies = [
     "accelerate>=1.15.0",
     "fastapi>=0.142.2",
+    "hf-xet>=1.6.0",
     "huggingface-hub>=1.33.0",
     "librosa>=1.0.0",
     "matplotlib>=3.11.2",

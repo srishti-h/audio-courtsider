@@ -67,6 +67,8 @@ class Signal:
     probs: dict[str, float]  # event -> P(event just happened)
     team: dict[str, float]  # 'home'/'away' -> P(team | event)
     text: str = ""
+    threshold: float | None = None  # per-source entry threshold (falls back to SimConfig.cs_threshold)
+    source: str = "text"
 
 
 class MinuteClock:
@@ -282,7 +284,7 @@ class MatchSim:
             return
         best = max(fresh, key=lambda e: s.probs.get(e, 0.0))
         p = s.probs.get(best, 0.0)
-        if p < self.cfg.cs_threshold:
+        if p < (s.threshold if s.threshold is not None else self.cfg.cs_threshold):
             return
         now_state = self.feed_state
         base = self.fair(now_state)

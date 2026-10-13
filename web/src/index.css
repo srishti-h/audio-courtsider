@@ -207,7 +207,7 @@ input[type='number'] { width: 62px; }
 .det { display: grid; grid-template-columns: 70px 1fr auto; gap: 10px; padding: 7px 8px; border-radius: 8px; font-size: 13px; }
 .det + .det { border-top: 1px solid rgba(31, 43, 82, 0.5); }
 .det .src { font-size: 11px; font-weight: 700; text-transform: uppercase; }
-.det .src.text { color: #ff7aa0; } .det .src.crowd { color: var(--gold); } .det .src.feed { color: #8fb4ff; }
+.det .src.text { color: #ff7aa0; } .det .src.crowd { color: var(--gold); } .det .src.feed { color: #8fb4ff; } .det .src.audio { color: var(--up); }
 .det .lead { font-weight: 700; color: var(--up); }
 .roar { height: 10px; border-radius: 5px; background: var(--line); overflow: hidden; margin-top: 6px; }
 .roar i { display: block; height: 100%; background: linear-gradient(90deg, var(--blau), var(--gold), var(--grana)); transition: width 0.3s; }

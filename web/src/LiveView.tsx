@@ -136,8 +136,14 @@ function LiveApp() {
               <h2>What the bot believes <small>last 2 minutes</small></h2>
               <ProbChart points={points} now={now} marks={marks} />
               <Meters goal={last?.probs.goal ?? 0} penalty={last?.probs.penalty ?? 0} red={last?.probs.red_card ?? 0} team={last?.team} />
-              <h2 style={{ marginTop: 14 }}>Crowd <small>high-band energy vs the last 25 s · fires at z ≥ 4</small></h2>
+              <h2 style={{ marginTop: 14 }}>Crowd <small>high-band energy vs the recent baseline · fires at z ≥ 4</small></h2>
               <div className="roar"><i style={{ width: `${Math.min(100, Math.max(0, (lastCrowd?.z ?? 0) / 8) * 100)}%` }} /></div>
+              {lastCrowd?.pAudio !== null && lastCrowd?.pAudio !== undefined && (
+                <>
+                  <h2 style={{ marginTop: 14 }}>Audio goal model <small>learned from 500 broadcasts · P(goal in the last 6 s)</small></h2>
+                  <div className="roar"><i style={{ width: `${lastCrowd.pAudio * 100}%` }} /></div>
+                </>
+              )}
             </div>
             <div className="card span-12">
               <h2>Detections vs the feed <small>lead = seconds before the live-score feed reported it</small></h2>
@@ -151,14 +157,18 @@ function LiveApp() {
                       <div key={i} className="det">
                         <span className="ts">{ago(e.wall, state.started)}</span>
                         <span><span className="src feed">feed</span> {e.event} · {e.team} · {e.score[0]}–{e.score[1]} ({e.clock})</span>
-                        <span className="lead">{lead?.text !== undefined ? `text +${lead.text.toFixed(1)}s` : ''} {lead?.crowd !== undefined ? `crowd +${lead.crowd.toFixed(1)}s` : ''}</span>
+                        <span className="lead">
+                          {lead?.text !== undefined ? `text +${lead.text.toFixed(1)}s ` : ''}
+                          {lead?.audio !== undefined ? `audio +${lead.audio.toFixed(1)}s ` : ''}
+                          {lead?.crowd !== undefined ? `crowd +${lead.crowd.toFixed(1)}s` : ''}
+                        </span>
                       </div>
                     )
                   }
                   return (
                     <div key={i} className="det">
                       <span className="ts">{ago(e.wall, state.started)}</span>
-                      <span><span className={`src ${e.source}`}>{e.source}</span> {e.event}{e.team ? ` · ${e.team}` : ''}{e.text ? ` · "${e.text}"` : ''}</span>
+                      <span><span className={`src ${e.source.replace('-fast', '')}`}>{e.source === 'text-fast' ? 'text ⚡' : e.source}</span> {e.event}{e.team ? ` · ${e.team}` : ''}{e.text ? ` · "${e.text}"` : ''}</span>
                       <span>{e.p !== null ? `${Math.round(e.p * 100)}%` : ''}</span>
                     </div>
                   )

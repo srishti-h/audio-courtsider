@@ -36,3 +36,12 @@ def test_lead_time_report_matches_detections_before_the_feed():
     s = summarize(events)
     assert s["goals"] == [dict(clock="23'", team="home", text_lead_s=5.5, crowd_lead_s=9.5)]
     assert s["false_alarms"] == {"text": 1, "crowd": 0} and s["audio_minutes"] == 10.0
+
+
+def test_fast_text_detections_count_as_text():
+    events = [
+        dict(kind="session", home="H", away="A"),
+        dict(kind="detection", source="text-fast", event="goal", wall=60.8),
+        dict(kind="feed", event="goal", team="home", clock="27'", wall=76.5),
+    ]
+    assert summarize(events)["goals"][0]["text_lead_s"] == 15.7

@@ -21,6 +21,38 @@ def signals_for_game(beliefs: pd.DataFrame, latency: float) -> list[Signal]:
     return out
 
 
+def audio_signals_for_game(
+    track: pd.DataFrame, threshold: float, latency: float = 0.05, floor: float = 0.05, every: float = 1.0
+) -> list[Signal]:
+    """Signals from the audio goal detector (10 Hz calibrated P(goal in last 6 s) per half).
+
+    Emitted when the probability rises through `threshold` and then about once a second while it
+    stays above `floor`, which keeps the simulation light. Audio is timed on the broadcast itself, so
+    there is no transcript-timestamp margin; `latency` covers feature + network compute. The crowd
+    can't tell us which team scored, so the team split is 50/50.
+    """
+    from courtsider.data.taxonomy import global_time
+
+    out, last = [], -1e9
+    for r in track.sort_values(["half", "t"]).itertuples():
+        g = global_time(int(r.half), float(r.t))
+        if r.p_goal < floor:
+            continue
+        if g - last >= every or (r.p_goal >= threshold > 0 and g - last >= 0.2):
+            last = g
+            out.append(
+                Signal(
+                    g + latency,
+                    {"goal": float(r.p_goal), "red_card": 0.0, "penalty": 0.0},
+                    {"home": 0.5, "away": 0.5},
+                    "",
+                    threshold=threshold,
+                    source="audio",
+                )
+            )
+    return out
+
+
 class PricerFactory:
     def __init__(self, games: pd.DataFrame, results: pd.DataFrame, events: pd.DataFrame):
         self.games = games.set_index("game_id")
