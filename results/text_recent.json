@@ -1,0 +1,213 @@
+{
+  "current": {
+    "valid": {
+      "goal": {
+        "avg_precision": 0.0856,
+        "roc_auc": 0.6882,
+        "positives": 1681
+      },
+      "shot": {
+        "avg_precision": 0.1931,
+        "roc_auc": 0.6825,
+        "positives": 9758
+      },
+      "corner": {
+        "avg_precision": 0.2083,
+        "roc_auc": 0.713,
+        "positives": 4942
+      },
+      "yellow_card": {
+        "avg_precision": 0.1505,
+        "roc_auc": 0.7387,
+        "positives": 1758
+      },
+      "red_card": {
+        "avg_precision": 0.073,
+        "roc_auc": 0.7354,
+        "positives": 71
+      },
+      "penalty": {
+        "avg_precision": 0.0334,
+        "roc_auc": 0.7768,
+        "positives": 228
+      },
+      "offside": {
+        "avg_precision": 0.1158,
+        "roc_auc": 0.6532,
+        "positives": 1845
+      },
+      "substitution": {
+        "avg_precision": 0.1854,
+        "roc_auc": 0.7731,
+        "positives": 2830
+      }
+    },
+    "test": {
+      "goal": {
+        "avg_precision": 0.0799,
+        "roc_auc": 0.6953,
+        "positives": 1453
+      },
+      "shot": {
+        "avg_precision": 0.2099,
+        "roc_auc": 0.691,
+        "positives": 9933
+      },
+      "corner": {
+        "avg_precision": 0.2124,
+        "roc_auc": 0.7212,
+        "positives": 5076
+      },
+      "yellow_card": {
+        "avg_precision": 0.1529,
+        "roc_auc": 0.7218,
+        "positives": 1945
+      },
+      "red_card": {
+        "avg_precision": 0.012,
+        "roc_auc": 0.8131,
+        "positives": 108
+      },
+      "penalty": {
+        "avg_precision": 0.0184,
+        "roc_auc": 0.7461,
+        "positives": 203
+      },
+      "offside": {
+        "avg_precision": 0.1216,
+        "roc_auc": 0.6304,
+        "positives": 1857
+      },
+      "substitution": {
+        "avg_precision": 0.1898,
+        "roc_auc": 0.7824,
+        "positives": 2913
+      }
+    },
+    "valid_price_moving_ap": 0.064,
+    "test_price_moving_ap": 0.0368,
+    "radio_2026_test": {
+      "segments": {
+        "goal": {
+          "avg_precision": 0.1718,
+          "roc_auc": 0.6205,
+          "positives": 11
+        }
+      },
+      "events": {
+        "goals": 3,
+        "recall": 0.333,
+        "false_alarms_per_min": 0.14,
+        "minutes": 21.4
+      }
+    }
+  },
+  "train_rows": {
+    "espn": 106516,
+    "soccernet": 102412
+  },
+  "candidate": {
+    "valid": {
+      "goal": {
+        "avg_precision": 0.0846,
+        "roc_auc": 0.6823,
+        "positives": 1681
+      },
+      "shot": {
+        "avg_precision": 0.192,
+        "roc_auc": 0.6771,
+        "positives": 9758
+      },
+      "corner": {
+        "avg_precision": 0.2122,
+        "roc_auc": 0.7202,
+        "positives": 4942
+      },
+      "yellow_card": {
+        "avg_precision": 0.1591,
+        "roc_auc": 0.7303,
+        "positives": 1758
+      },
+      "red_card": {
+        "avg_precision": 0.1206,
+        "roc_auc": 0.7051,
+        "positives": 71
+      },
+      "penalty": {
+        "avg_precision": 0.0364,
+        "roc_auc": 0.8076,
+        "positives": 228
+      },
+      "offside": {
+        "avg_precision": 0.124,
+        "roc_auc": 0.6571,
+        "positives": 1845
+      },
+      "substitution": {
+        "avg_precision": 0.1781,
+        "roc_auc": 0.7777,
+        "positives": 2830
+      }
+    },
+    "test": {
+      "goal": {
+        "avg_precision": 0.0821,
+        "roc_auc": 0.703,
+        "positives": 1453
+      },
+      "shot": {
+        "avg_precision": 0.2085,
+        "roc_auc": 0.691,
+        "positives": 9933
+      },
+      "corner": {
+        "avg_precision": 0.2126,
+        "roc_auc": 0.7264,
+        "positives": 5076
+      },
+      "yellow_card": {
+        "avg_precision": 0.1544,
+        "roc_auc": 0.7196,
+        "positives": 1945
+      },
+      "red_card": {
+        "avg_precision": 0.0233,
+        "roc_auc": 0.7895,
+        "positives": 108
+      },
+      "penalty": {
+        "avg_precision": 0.0288,
+        "roc_auc": 0.7683,
+        "positives": 203
+      },
+      "offside": {
+        "avg_precision": 0.1206,
+        "roc_auc": 0.6273,
+        "positives": 1857
+      },
+      "substitution": {
+        "avg_precision": 0.1882,
+        "roc_auc": 0.7889,
+        "positives": 2913
+      }
+    },
+    "valid_price_moving_ap": 0.0805,
+    "test_price_moving_ap": 0.0447,
+    "radio_2026_test": {
+      "segments": {
+        "goal": {
+          "avg_precision": 0.1606,
+          "roc_auc": 0.681,
+          "positives": 11
+        }
+      },
+      "events": {
+        "goals": 3,
+        "recall": 0.333,
+        "false_alarms_per_min": 0.047,
+        "minutes": 21.4
+      }
+    }
+  },
+  "promoted": true
+}

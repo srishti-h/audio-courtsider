@@ -1,18 +1,18 @@
 {
   "confirmed (1 s step)": {
     "goals": 30,
-    "recall": 0.233,
-    "delay_p50": 11.11,
-    "delay_p25": 7.68,
-    "false_alarms_per_min": 0.075,
+    "recall": 0.367,
+    "delay_p50": 8.13,
+    "delay_p25": 5.63,
+    "false_alarms_per_min": 0.113,
     "negative_minutes": 26.7
   },
   "fast (0.5 s step + speculative)": {
     "goals": 30,
-    "recall": 0.567,
-    "delay_p50": 5.66,
-    "delay_p25": 4.09,
-    "false_alarms_per_min": 0.15,
+    "recall": 0.7,
+    "delay_p50": 3.21,
+    "delay_p25": 0.77,
+    "false_alarms_per_min": 0.225,
     "negative_minutes": 26.7
   }
 }

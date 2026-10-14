@@ -18,16 +18,17 @@ odds for trading). Thresholds and model choices were made on the validation spli
 **Headline: listen to the crowd, not just the words.** A small causal network trained on the
 broadcast audio of 500 matches hears a goal a median **2.4 s** after it happens (67 % of goals,
 62 % precision, ~1 false alarm per match). Trading on it earns **+$5.6 per match against a market
-2 s behind the broadcast and +$15.7 at 5 s**, versus −$1.5 and +$0.5 for commentary text alone:
+2 s behind the broadcast and +$15.7 at 5 s**, versus −$1.0 and +$0.5 for commentary text alone:
 
 | market's feed delay (behind the broadcast) | 1 s | 2 s | 3 s | 5 s | 8 s | 12 s |
 |---|---|---|---|---|---|---|
-| bot on commentary text ($ / match) | −1.48 | −1.48 | −1.45 | +0.47 | +1.23 | +1.37 |
+| bot on commentary text ($ / match) | −0.95 | −0.95 | −0.93 | +0.48 | +1.55 | +1.62 |
 | **bot on the learned audio detector** | −0.10 | **+5.60** | **+10.32** | **+15.72** | **+16.49** | **+16.50** |
-| bot on text + audio | −1.40 | +4.29 | +8.94 | +14.68 | +16.10 | +16.26 |
+| bot on text + audio | −0.91 | +4.80 | +9.43 | +15.09 | +16.40 | +16.45 |
 
-(±$2 standard error across the 75 matches for the audio rows, ±$0.4–1.0 for text.) Adding text to
-audio doesn't help: its extra false alarms cost more than its extra catches earn.
+(±$2 standard error across the 75 matches for the audio rows, ±$0.3–0.9 for text.) Adding text to
+audio barely helps: its extra false alarms cost about as much as its extra catches earn. Text rows
+use the text model refreshed with 2025/26 data (see *Recent data* below).
 
 ![signal sources](results/figures/market_audio.png)
 
@@ -35,8 +36,8 @@ audio doesn't help: its extra false alarms cost more than its extra catches earn
 
 | detector | data | goals caught | median delay | false alarms / min |
 |---|---|---|---|---|
-| commentary text, confirmed sentences | 30 goals, real broadcast audio | 23 % | 11.1 s | 0.075 |
-| commentary text, **fast path** (0.5 s step, scores unconfirmed words) | same | 57 % | 5.7 s | 0.15 |
+| commentary text, confirmed sentences | 30 goals, real broadcast audio | 37 % | 8.1 s | 0.11 |
+| commentary text, **fast path** (0.5 s step, scores unconfirmed words) | same | 70 % | 3.2 s | 0.23 |
 | hand-built crowd-roar rule | 30 goals, real audio | 23 % | 0.6 s | 0.22 |
 | **learned audio goal detector** (causal TCN on log-mel) | 309 goals, 188 halves | **67 %** | **2.4 s** | **0.015** |
 | same detector, lower threshold (0.2) | same | 85 % | 1.1 s | 0.087 |
@@ -47,11 +48,11 @@ same 75 test matches:
 
 | market's feed delay behind the pitch | 1–3 s | 5 s | 8 s | 12 s | 20 s |
 |---|---|---|---|---|---|
-| courtsider P&L ($ / match) | −1.48 ± 0.37 | +0.47 ± 0.90 | +1.22 ± 0.98 | +1.37 ± 0.99 | +1.27 ± 0.99 |
-| gain vs a 1 s feed (paired) | – | **+1.95 ± 0.78** | **+2.71 ± 0.88** | **+2.85 ± 0.88** | **+2.75 ± 0.93** |
+| courtsider P&L ($ / match) | −0.95 ± 0.33 | +0.48 ± 0.77 | +1.55 ± 0.90 | +1.62 ± 0.92 | +1.57 ± 0.93 |
+| gain vs a 1 s feed (paired) | – | **+1.42 ± 0.75** | **+2.50 ± 0.87** | **+2.57 ± 0.90** | **+2.52 ± 0.96** |
 
 Against a fast (≤3 s) data feed the courtsider *loses* money: commentary usually confirms a goal
-after the price has already moved, so its only trades are false alarms (~0.8 per match), each
+after the price has already moved, so its only trades are false alarms (~0.5 per match), each
 costing the spread. The edge switches on at ~5 s, i.e. against books priced off TV pictures
 (5–8 s behind) or streams. The courtsider ignores commentary about an event the feed has already
 published in the last 45 s, so a late "goal!" is never mistaken for a second goal.
@@ -60,8 +61,8 @@ published in the last 45 s, so a late "goal!" is never mistaken for a second goa
 
 **2. A market maker can defend cheaply, but the bigger threat is the TV.** If the market maker
 runs the same commentary detector and pulls quotes when P(event) ≥ 0.4, it cuts its losses to
-the courtsider by $0.91–1.10 per match at a cost of only $0.15–0.21 of spread revenue; at 0.2 it
-shuts the courtsider out entirely for $0.53–0.57. For comparison, once its feed is slower than TV
+the courtsider by $1.07–1.10 per match at a cost of only $0.19–0.23 of spread revenue; at 0.2 it
+shuts the courtsider out entirely for $0.45–0.52. For comparison, once its feed is slower than TV
 viewers (7 s), slow-but-informed TV traders cost it **$46 ± 4 per match**.
 
 **3. Detecting events from (noisy, mostly machine-translated) commentary text** — event level,
@@ -69,17 +70,19 @@ test split, with measured ASR latency (1.83 s) and a conservative 1.05 s timesta
 
 | event | n | precision | recall | median time after the event |
 |---|---|---|---|---|
-| goal | 312 | 0.44 | 0.25 | 6.1 s |
-| yellow card | 397 | 0.49 | 0.60 | 5.0 s |
-| offside | 389 | 0.56 | 0.51 | 6.0 s |
-| corner | 927 | 0.39 | 0.41 | 3.8 s |
-| substitution | 533 | 0.34 | 0.44 | 2.7 s |
-| penalty | 37 | 0.12 | 0.08 | 4.3 s |
+| goal | 312 | 0.54 | 0.23 | 6.4 s |
+| yellow card | 397 | 0.54 | 0.54 | 5.1 s |
+| offside | 389 | 0.61 | 0.46 | 5.6 s |
+| corner | 927 | 0.44 | 0.39 | 3.7 s |
+| substitution | 533 | 0.50 | 0.35 | 3.1 s |
+| penalty | 37 | 0.17 | 0.05 | −2.5 s (called as it is awarded) |
+| red card | 21 | 0.33 | 0.10 | 11.1 s |
 
 For goals, the fine-tuned DistilRoBERTa beats TF-IDF + LR (P 0.21 / R 0.18) and keyword rules
 (P 0.07 / R 0.62: "goal" is said all the time) and its isotonic-calibrated probabilities are
-well calibrated (ECE 0.001 vs 0.033 raw). An HMM filter trades precision for recall (P 0.13 / R
-0.52). Team attribution on confident goal calls: 62.5 %. Red cards (21 in test) remain unsolved.
+well calibrated (ECE 0.001 vs 0.030 raw). An HMM filter trades precision for recall (P 0.13 / R
+0.50). Team attribution on confident goal calls: 62 %. Red cards were undetectable (0 of 21) until
+the 2025/26 ESPN data was added; they are still the weakest class.
 
 ![goal detection](results/figures/goal_detection.png)
 
@@ -120,6 +123,34 @@ on 5,478 matches, closing 73 % of the gap between base rates (1.063) and Pinnacl
 engine handles 350 k msgs/s (p50 2.3 µs, p99 7.8 µs); the text classifier scores a segment in
 3.4 ms on MPS; acoustic features cost 11 ms per second of audio.
 
+## Recent data (2025–26)
+
+SoccerNet stops in 2017, so `make refresh` (rerun after match weekends) brings in current data:
+
+* **Results and odds through 2026/27** (football-data.co.uk). Scored the same out-of-sample way on
+  3,801 matches from 2024–26, Dixon–Coles stays as close to Pinnacle's closing odds as on 2014–17
+  (log loss 1.000 vs 0.970, against 0.989 vs 0.962). The Live tab shows its pre-match prices.
+* **ESPN's written play-by-play for every 2025/26 match in the five leagues** (2,047 matches,
+  229 k lines, 5.8 k goals, 1.3 k penalties, 400 red cards; `data/espn.py`). The text model is
+  fine-tuned on it from the current weights, mixed 1:1 with a replay sample of SoccerNet so it keeps
+  the spoken style, and kept only if SoccerNet validation does not get worse:
+
+  | text model, SoccerNet test | before | **with 2025/26 data** |
+  |---|---|---|
+  | goal calls, precision (event level) | 43 % | **54 %** (recall 25 % → 23 %) |
+  | red cards caught | 0 % | **10 %** (33 % precision) |
+  | segment avg. precision: goal / penalty / red card | 0.080 / 0.018 / 0.012 | **0.082 / 0.029 / 0.023** |
+  | text bot vs a 1 s feed ($ / match) | −1.48 | **−0.95** |
+
+* **Live Spanish radio recorded by the background recorder, labelled automatically** (`data/radio.py`).
+  Radio arrives later than the action, so each station's delay is estimated as the shift that lines
+  up ESPN's goal times with goal calls in the transcript; segments are then labelled like SoccerNet's.
+  Sessions are split by date (latest 30 % held out). The recorder also logs log-mel features (never
+  audio) so the audio goal model retrains on radio (`goal_model --radio`) once 30+ goals are logged.
+  So far: one Champions League night, 22 min, 3 goals; on it the refreshed text model raises
+  3× fewer false alarms (0.05/min vs 0.14) with the same recall (1 of 3). Too small to quote as a
+  result yet; it grows every match day.
+
 ## Live mode: point it at a real match
 
 The local dashboard has a **Live** tab. Pick a match from the live-score feed (ESPN's public
@@ -141,8 +172,9 @@ reconnects automatically) and multi-match radio produces more false alarms than 
 
 Sessions are logged to `data/live/` (text and detections only, no audio). Then
 `python -m courtsider.live.report` summarises lead times across every match you've listened to
-(`results/live.json`). Text play-by-play sites (FotMob, ESPN) aren't used as "commentary": their
-text is generated from the same data feed, so it can never be ahead of it.
+(`results/live.json`). Text play-by-play sites (FotMob, ESPN) aren't used as live "commentary": their
+text is generated from the same data feed, so it can never be ahead of it. ESPN's play-by-play is
+used only as training data for the text model (see *Recent data*).
 
 
 ```
@@ -206,6 +238,7 @@ make data      # download SoccerNet labels, Echoes transcripts, football-data od
 make train     # text event extractors (~45 min on an M-series GPU)
 make eval      # pricing, audio, text, market and latency experiments -> results/
 make test      # unit + property-based tests
+make refresh   # recent results, ESPN commentary, recorded radio -> retrain + re-evaluate
 make serve     # API on :8000   (in another terminal: make web  ->  http://localhost:5173)
 ```
 

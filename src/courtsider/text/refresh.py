@@ -1,9 +1,11 @@
-"""Retrain the text event model with recent data: python -m courtsider.text.refresh [--epochs 2]
+"""Retrain the text event model with recent data: python -m courtsider.text.refresh
 
-Candidate = the same DistilRoBERTa recipe as text.train, trained on SoccerNet commentary (2014-17)
-plus ESPN's written 2025/26 commentary (data.espn) plus labelled live-radio sessions from the train
-split (data.radio). It replaces models/text_extractor only if it is no worse on the SoccerNet
-validation split, the domain every backtest runs on. Both models are reported on the SoccerNet test
+Candidate = the current model, fine-tuned further (warm start, one pass) on ESPN's written 2025/26
+commentary (data.espn) and labelled live-radio sessions from the train split (data.radio), mixed
+with an equal-size replay sample of SoccerNet commentary (2014-17) so it keeps the spoken style.
+Warm starting keeps a weekly refresh to about an hour instead of a full retrain. The candidate
+replaces models/text_extractor only if it is no worse on the SoccerNet validation split, the domain
+every backtest runs on. Both models are reported on the SoccerNet test
 split and on the held-out 2026 radio sessions -> results/text_recent.json.
 """
 
@@ -88,7 +90,7 @@ def eval_data() -> tuple[pd.DataFrame, pd.DataFrame]:
     return df[df.split.isin(["valid", "test"])].reset_index(drop=True), radio_rows()
 
 
-def training_set(neg_frac: float, rare_oversample: int) -> pd.DataFrame:
+def training_set(neg_frac: float, rare_oversample: int, per_source: int) -> pd.DataFrame:
     df, espn, radio = load_labelled(), espn_rows(), radio_rows()
     cols = ["input", "team", *EVENT_TYPES]
     parts = [df[df.split == "train"].assign(source="soccernet")[cols + ["source"]]]
@@ -104,13 +106,18 @@ def training_set(neg_frac: float, rare_oversample: int) -> pd.DataFrame:
         | (rng.random(len(train)) < neg_frac)
     )
     tr = train[keep]
+    tr = pd.concat(
+        [g.sample(min(len(g), per_source), random_state=0) for _, g in tr.groupby("source")], ignore_index=True
+    )
     rare = (tr.penalty == 1) | (tr.red_card == 1)
     return pd.concat([tr] + [tr[rare]] * rare_oversample).sample(frac=1, random_state=0)
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--epochs", type=int, default=2)
+    ap.add_argument("--epochs", type=int, default=1)
+    ap.add_argument("--per-source", type=int, default=100_000, help="max rows per source before oversampling")
+    ap.add_argument("--lr", type=float, default=2e-5)
     ap.add_argument("--neg-frac", type=float, default=0.4)
     ap.add_argument("--rare-oversample", type=int, default=6)
     args = ap.parse_args()
@@ -127,14 +134,14 @@ def main() -> None:
 
     # build the training set in its own scope and keep only what fit() needs: unified memory is shared
     # with the GPU, and holding every table through training pushed a busy Mac into swap (10x slower steps)
-    tr = training_set(args.neg_frac, args.rare_oversample)
+    tr = training_set(args.neg_frac, args.rare_oversample, args.per_source)
     report["train_rows"] = tr.source.value_counts().to_dict()
     texts, y, team = tr.input.tolist(), tr[EVENT_TYPES].to_numpy(), tr.team.to_numpy()
     del tr
     gc.collect()
     print(f"candidate train rows: {report['train_rows']}", flush=True)
 
-    cand = TransformerModel().fit(texts, y, team, epochs=args.epochs)
+    cand = TransformerModel.load(MODELS / "text_extractor").fit(texts, y, team, epochs=args.epochs, lr=args.lr)
     del texts, y, team
     gc.collect()
     cand.save(MODELS / "text_extractor_recent")
