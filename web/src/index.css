@@ -237,3 +237,21 @@ footer { margin-top: 26px; color: var(--faint); font-size: 11px; }
   .race { overflow-x: auto; }
   .race svg { min-width: 820px; }
 }
+
+/* ---- guide: tour + right-click explanations ------------------------------------------------ */
+.controls-group { display: inline-flex; align-items: center; gap: 10px; }
+.guide-btn { border-color: rgba(242, 194, 48, 0.5); color: var(--gold); padding: 6px 12px; }
+.guide-scrim { position: fixed; inset: 0; z-index: 90; }
+.guide-ring { position: fixed; z-index: 91; pointer-events: none; border: 2px solid var(--gold); border-radius: calc(var(--radius) + 4px); box-shadow: 0 0 0 4px rgba(242, 194, 48, 0.18), 0 0 24px rgba(242, 194, 48, 0.35); transition: all 0.18s ease; }
+.guide-ring.dim { box-shadow: 0 0 0 4px rgba(242, 194, 48, 0.18), 0 0 0 9999px rgba(3, 6, 16, 0.72); }
+.guide-pop, .guide-hint { position: fixed; z-index: 92; width: min(360px, calc(100vw - 24px)); background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55); overflow: hidden; }
+.guide-pop { padding: 0 16px 14px; }
+.guide-stripe { height: 5px; margin: 0 -16px 12px; background: var(--stripes); }
+.guide-step { color: var(--gold); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
+.guide-pop h3 { margin: 4px 0 6px; font: 700 22px 'Barlow Condensed', 'Inter', sans-serif; color: var(--text); }
+.guide-pop p { margin: 0 0 12px; color: #c9d1e8; font-size: 13.5px; line-height: 1.55; }
+.guide-actions { display: flex; gap: 8px; justify-content: flex-end; align-items: center; flex-wrap: wrap; }
+.guide-tip { margin-right: auto; color: var(--faint); font-size: 11px; }
+.guide-hint { right: 16px; bottom: 16px; padding: 14px 16px; font-size: 13px; color: #c9d1e8; line-height: 1.5; border-top: 4px solid var(--gold); }
+.guide-hint b { color: var(--gold); }
+.guide-hint .guide-actions { margin-top: 10px; }

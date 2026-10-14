@@ -23,11 +23,11 @@ export function ReplayView() {
 
       {state.meta && (
         <>
-          <Scoreboard home={state.meta.home} away={state.meta.away} score={state.score}
+          <div data-explain="scoreboard"><Scoreboard home={state.meta.home} away={state.meta.away} score={state.score}
             clock={fmtClock(state.half, state.clock)}
-            note={`score as the official feed reports it · speech pipeline latency ${state.meta.latency.toFixed(1)}s${state.status === 'ended' ? ' · replay finished' : ''}`} />
+            note={`score as the official feed reports it · speech pipeline latency ${state.meta.latency.toFixed(1)}s${state.status === 'ended' ? ' · replay finished' : ''}`} /></div>
           <div className="grid">
-            <div className="card span-12">
+            <div className="card span-12" data-explain="race">
               <h2>The race · who knew first <small>last 90 seconds</small></h2>
               <Race markers={state.markers} now={state.now} />
               <div className="race-legend">
@@ -36,20 +36,20 @@ export function ReplayView() {
                 <span><i style={{ background: 'var(--blau)' }} />official feed reports it, market maker reprices</span>
               </div>
             </div>
-            <div className="card span-5">
+            <div className="card span-5" data-explain="commentary">
               <h2>Commentary <small>SoccerNet-Echoes</small></h2>
               <Transcript lines={state.signals.map((s, i) => ({ key: `${s.t}-${i}`, ts: fmtClock(s.half, s.clock), text: s.text, p: Math.max(s.probs.goal ?? 0, s.probs.penalty ?? 0, s.probs.red_card ?? 0) }))} />
             </div>
-            <div className="card span-7">
+            <div className="card span-7" data-explain="beliefs">
               <h2>What the bot believes <small>P(goal) solid · penalty dashed · red card blue</small></h2>
               <ProbChart points={signalPoints(state.signals)} now={state.now} marks={marks} />
-              <Meters goal={last?.probs.goal ?? 0} penalty={last?.probs.penalty ?? 0} red={last?.probs.red_card ?? 0} team={last?.team as any} />
+              <div data-explain="meters"><Meters goal={last?.probs.goal ?? 0} penalty={last?.probs.penalty ?? 0} red={last?.probs.red_card ?? 0} team={last?.team as any} /></div>
             </div>
-            <div className="card span-8">
+            <div className="card span-8" data-explain="books">
               <h2>Order books <small>market maker's quotes · fair value from the in-play model</small></h2>
               <Books books={state.books} fair={state.fair} trades={state.trades} />
             </div>
-            <div className="card span-4">
+            <div className="card span-4" data-explain="pnl">
               <h2>P&amp;L</h2>
               <PnlChart pnl={state.pnl} />
             </div>
@@ -78,7 +78,7 @@ function Intro({ onPlay, r }: { onPlay: (p: ReplayParams) => void; r: any }) {
     <section className="hero">
       <div className="card pitch">
         <h2>When a goal goes in, who finds out first?</h2>
-        <div className="timeline-strip">
+        <div className="timeline-strip" data-explain="timeline">
           <div className="c1"><b>0 s</b><span>the ball crosses the line</span></div>
           <div className="c2"><b>~1–6 s</b><span>the commentator calls it</span></div>
           <div className="c3"><b>2–10 s</b><span>the official data feed</span></div>
@@ -94,15 +94,16 @@ function Intro({ onPlay, r }: { onPlay: (p: ReplayParams) => void; r: any }) {
           prices. Switch the market's feed delay to watch the edge appear at 8 s and vanish at 1 s.
         </p>
         <div className="cta-row">
-          {STATIC && showcase && <button className="btn" onClick={() => onPlay(staticParams(showcase, 2, 8, false, 2))}>▶ Watch a goal against a TV-delayed market</button>}
+          {STATIC && showcase && <button className="btn" data-explain="watch" onClick={() => onPlay(staticParams(showcase, 2, 8, false, 2))}>▶ Watch a goal against a TV-delayed market</button>}
           {!STATIC && <span className="hint">Pick a match above and press play, or jump straight to a goal.</span>}
+          <button className="btn gold" onClick={() => window.dispatchEvent(new Event('courtsider-tour'))}>? Take the tour</button>
           <a className="btn ghost" href={REPO_URL}>Code, methods &amp; full results</a>
         </div>
       </div>
-      <div className="card">
+      <div className="card" data-explain="kpis">
         <h2>Headline results <small>held-out test matches</small></h2>
         <Kpis r={r} />
-        <EdgeTable r={r} />
+        <div data-explain="edge"><EdgeTable r={r} /></div>
       </div>
     </section>
   )
@@ -146,14 +147,14 @@ function StaticControls({ onPlay }: { onPlay: (p: ReplayParams) => void }) {
   const match = matches.find((m) => m.id === id)
   return (
     <div className="controls">
-      <select value={id} onChange={(e) => setId(e.target.value)}>
+      <select data-explain="match" value={id} onChange={(e) => setId(e.target.value)}>
         {matches.map((m) => <option key={m.id} value={m.id}>{m.date} · {m.label}</option>)}
       </select>
-      <label>Market's feed</label>
-      <FeedToggle value={feedDelay} onChange={setFeedDelay} options={[[1, '1 s · fast data feed'], [8, '8 s · TV-delayed']]} />
-      <label className="toggle"><input type="checkbox" checked={guard} onChange={(e) => setGuard(e.target.checked)} /> MM listens too</label>
-      <label>Speed <input type="number" min={1} max={20} value={speed} onChange={(e) => setSpeed(+e.target.value)} />×</label>
-      <div className="chips">
+      <span data-explain="feed" className="controls-group"><label>Market's feed</label>
+      <FeedToggle value={feedDelay} onChange={setFeedDelay} options={[[1, '1 s · fast data feed'], [8, '8 s · TV-delayed']]} /></span>
+      <label className="toggle" data-explain="guard"><input type="checkbox" checked={guard} onChange={(e) => setGuard(e.target.checked)} /> MM listens too</label>
+      <label data-explain="speed">Speed <input type="number" min={1} max={20} value={speed} onChange={(e) => setSpeed(+e.target.value)} />×</label>
+      <div className="chips" data-explain="goals">
         {match?.goals.map((g) => (
           <button key={g.n} className="btn ghost" onClick={() => onPlay(staticParams(match, g.n, feedDelay, guard, speed))}>
             ▶ Goal {g.n} · {g.minute}' {g.team}
@@ -188,14 +189,14 @@ function LiveControls({ onPlay }: { onPlay: (p: ReplayParams) => void }) {
   const play = (start: number) => onPlay({ game_id: gameId, speed, feed_delay: feedDelay, cs_threshold: threshold, mm_audio_guard: guard, start })
   return (
     <div className="controls">
-      <select value={gameId} onChange={(e) => setGameId(e.target.value)}>
+      <select data-explain="match" value={gameId} onChange={(e) => setGameId(e.target.value)}>
         {games.map((g) => <option key={g.game_id} value={g.game_id}>{g.date} · {g.label}</option>)}
       </select>
-      <label>Feed delay <input type="number" step={0.5} min={0} max={20} value={feedDelay} onChange={(e) => setFeedDelay(+e.target.value)} />s</label>
+      <label data-explain="feed">Feed delay <input type="number" step={0.5} min={0} max={20} value={feedDelay} onChange={(e) => setFeedDelay(+e.target.value)} />s</label>
       <label>Entry P ≥ <input type="number" step={0.05} min={0.1} max={0.99} value={threshold} onChange={(e) => setThreshold(+e.target.value)} /></label>
-      <label className="toggle"><input type="checkbox" checked={guard} onChange={(e) => setGuard(e.target.checked)} /> MM listens too</label>
-      <label>Speed <input type="number" min={1} max={50} value={speed} onChange={(e) => setSpeed(+e.target.value)} />×</label>
-      <div className="chips">
+      <label className="toggle" data-explain="guard"><input type="checkbox" checked={guard} onChange={(e) => setGuard(e.target.checked)} /> MM listens too</label>
+      <label data-explain="speed">Speed <input type="number" min={1} max={50} value={speed} onChange={(e) => setSpeed(+e.target.value)} />×</label>
+      <div className="chips" data-explain="goals">
         <button className="btn" onClick={() => play(0)}>▶ From kick-off</button>
         {game?.goals.map((g, i) => <button key={g} className="btn ghost" onClick={() => play(Math.max(0, g - 45))}>Goal {i + 1}</button>)}
       </div>

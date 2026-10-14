@@ -18,7 +18,7 @@ export function LiveView() {
 
 function LiveUnavailable() {
   return (
-    <div className="card span-12" style={{ marginTop: 16 }}>
+    <div className="card span-12" style={{ marginTop: 16 }} data-explain="live">
       <h2>Live mode</h2>
       <p className="hint">
         Live mode listens to a match while you watch it: your microphone, or the audio of a browser tab streaming the game.
@@ -65,7 +65,7 @@ function LiveApp() {
     <>
       {!listening && (
         <div className="live-setup" style={{ marginTop: 16 }}>
-          <div className="card">
+          <div className="card" data-explain="live-match">
             <h2>1 · Pick the match <small>live-score feed (ESPN, polled every 5 s)</small></h2>
             <div className="match-list">
               {matches.length === 0 && <div className="note">No matches from the feed right now. Type the teams instead.</div>}
@@ -85,7 +85,7 @@ function LiveApp() {
               <input type="text" placeholder="Away" value={manual.away} onChange={(e) => { setManual({ ...manual, away: e.target.value }); setPick(null) }} />
             </div>
           </div>
-          <div className="card">
+          <div className="card" data-explain="live-audio">
             <h2>2 · Point it at the commentary</h2>
             <div className="controls" style={{ background: 'var(--bg-2)' }}>
               <label>Audio</label>
@@ -128,24 +128,24 @@ function LiveApp() {
             <div className="chips"><button className="btn ghost" onClick={stop}>■ Stop</button></div>
           </div>
           <div className="grid" style={{ marginTop: 16 }}>
-            <div className="card span-5">
+            <div className="card span-5" data-explain="commentary">
               <h2>Commentary <small>streaming Whisper</small></h2>
               <Transcript lines={state.segments.map((s, i) => ({ key: `${s.wall}-${i}`, ts: ago(s.wall, state.started), text: s.text, p: Math.max(s.probs.goal, s.probs.penalty, s.probs.red_card) }))} />
             </div>
-            <div className="card span-7">
+            <div className="card span-7" data-explain="beliefs">
               <h2>What the bot believes <small>last 2 minutes</small></h2>
               <ProbChart points={points} now={now} marks={marks} />
               <Meters goal={last?.probs.goal ?? 0} penalty={last?.probs.penalty ?? 0} red={last?.probs.red_card ?? 0} team={last?.team} />
               <h2 style={{ marginTop: 14 }}>Crowd <small>high-band energy vs the recent baseline · fires at z ≥ 4</small></h2>
-              <div className="roar"><i style={{ width: `${Math.min(100, Math.max(0, (lastCrowd?.z ?? 0) / 8) * 100)}%` }} /></div>
+              <div className="roar" data-explain="crowd"><i style={{ width: `${Math.min(100, Math.max(0, (lastCrowd?.z ?? 0) / 8) * 100)}%` }} /></div>
               {lastCrowd?.pAudio !== null && lastCrowd?.pAudio !== undefined && (
                 <>
                   <h2 style={{ marginTop: 14 }}>Audio goal model <small>learned from 500 broadcasts · P(goal in the last 6 s)</small></h2>
-                  <div className="roar"><i style={{ width: `${lastCrowd.pAudio * 100}%` }} /></div>
+                  <div className="roar" data-explain="audio-model"><i style={{ width: `${lastCrowd.pAudio * 100}%` }} /></div>
                 </>
               )}
             </div>
-            <div className="card span-12">
+            <div className="card span-12" data-explain="detections">
               <h2>Detections vs the feed <small>lead = seconds before the live-score feed reported it</small></h2>
               {state.detections.length === 0 && state.feed.length === 0 && <div className="note">Nothing yet. Goals, penalties, red cards and crowd roars show up here.</div>}
               {[...state.detections.map((d) => ({ ...d, kind: 'det' as const })), ...state.feed.map((f) => ({ ...f, kind: 'feed' as const }))]
