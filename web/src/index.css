@@ -255,3 +255,4 @@ footer { margin-top: 26px; color: var(--faint); font-size: 11px; }
 .guide-hint { right: 16px; bottom: 16px; padding: 14px 16px; font-size: 13px; color: #c9d1e8; line-height: 1.5; border-top: 4px solid var(--gold); }
 .guide-hint b { color: var(--gold); }
 .guide-hint .guide-actions { margin-top: 10px; }
+.fair-1x2 { color: var(--gold); font-size: 11px; margin-top: 2px; font-variant-numeric: tabular-nums; }

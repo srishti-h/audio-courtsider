@@ -177,8 +177,22 @@ def evaluate(tracks: list[tuple[dict, np.ndarray, np.ndarray]], th: float) -> di
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--epochs", type=int, default=6)
+    ap.add_argument("--radio", action="store_true", help="add logged live-radio features (data.radio) to training")
+    ap.add_argument("--min-radio-goals", type=int, default=30, help="with --radio: skip retraining below this")
     args = ap.parse_args()
     tr, va, te = load_split("train"), load_split("valid"), load_split("test")
+    radio_tr, radio_te = [], []
+    if args.radio:
+        from courtsider.data import radio
+
+        radio_tr, radio_te = radio.audio_halves("train"), radio.audio_halves("test")
+        n = sum(len(h["goals"]) for h in radio_tr)
+        if n < args.min_radio_goals:
+            print(
+                f"only {n} labelled radio goals with features (need {args.min_radio_goals}); keeping the current model"
+            )
+            return
+        tr = tr + radio_tr
     print(f"halves: train {len(tr)} valid {len(va)} test {len(te)}", flush=True)
     model = train(tr, args.epochs)
     MODELS.mkdir(exist_ok=True)
@@ -206,7 +220,11 @@ def main() -> None:
         test_at_selected=evaluate(te_tracks, best["threshold"]),
         window_s=WINDOW,
         receptive_field_s=round(model.receptive_field / FPS, 2),
+        radio_train_goals=sum(len(h["goals"]) for h in radio_tr),
     )
+    if radio_te:  # 2026 radio, held out by time
+        rt = [(h, t, iso.predict(p)) for h, t, p in ((h, *predict(model, h["path"])) for h in radio_te)]
+        report["radio_2026_test"] = evaluate(rt, best["threshold"])
     (RESULTS / "audio_goal.json").write_text(json.dumps(report, indent=2))
     # probability tracks for the market simulation (test matches), downsampled to 10 Hz
     rows = []

@@ -38,14 +38,18 @@ def main() -> None:
     events = pd.read_parquet(PROCESSED / "events.parquet")
     book = ModelBook(results)
 
-    ev = results[results.fd_season.isin(["1415", "1516", "1617"]) & results.mkt_h.notna()].copy()
-    probs = np.array([book.model_for(r.league, r.date).outcome_probs(r.home, r.away) for r in ev.itertuples()])
-    y = np.array([_outcome(h, a) for h, a in zip(ev.home_goals, ev.away_goals, strict=True)])
-    mkt = ev[["mkt_h", "mkt_d", "mkt_a"]].to_numpy()
-    base = np.tile(np.bincount(y, minlength=3) / len(y), (len(y), 1))
-    pre = dict(
-        n_matches=len(ev), dixon_coles=scores(probs, y), pinnacle_closing=scores(mkt, y), base_rates=scores(base, y)
-    )
+    def prematch(seasons: list[str]) -> dict:
+        ev = results[results.fd_season.isin(seasons) & results.mkt_h.notna()]
+        probs = np.array([book.model_for(r.league, r.date).outcome_probs(r.home, r.away) for r in ev.itertuples()])
+        y = np.array([_outcome(h, a) for h, a in zip(ev.home_goals, ev.away_goals, strict=True)])
+        mkt = ev[["mkt_h", "mkt_d", "mkt_a"]].to_numpy()
+        base = np.tile(np.bincount(y, minlength=3) / len(y), (len(y), 1))
+        return dict(
+            n_matches=len(ev), dixon_coles=scores(probs, y), pinnacle_closing=scores(mkt, y), base_rates=scores(base, y)
+        )
+
+    pre = prematch(["1415", "1516", "1617"])
+    recent = prematch(["2425", "2526", "2627"])  # same out-of-sample protocol on the latest seasons
 
     train_goals = events[(events.event == "goal") & events.game_id.isin(games[games.split == "train"].game_id)]
     clock = GoalClock(train_goals.minute.to_numpy())
@@ -74,6 +78,7 @@ def main() -> None:
     inplay = {f"minute_{m}": scores(np.array(v), ys)["brier"] for m, v in inplay_p.items()}
     report = dict(
         prematch=pre,
+        prematch_2024_2026=recent,
         inplay_brier=inplay,
         inplay_n_matches=len(ys),
         prematch_brier_on_same_matches=scores(np.array(prematch_p), ys)["brier"],

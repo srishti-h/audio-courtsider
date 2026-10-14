@@ -3,7 +3,7 @@ import { Meters, ProbChart, Scoreboard, Transcript } from './components'
 import { STATIC, REPO_URL } from './source'
 import { type AudioSource, useLive } from './useLive'
 
-interface FeedMatch { id: string; name: string; state: string; clock: string; home: string; away: string; score: [number, number]; error?: string }
+interface FeedMatch { id: string; name: string; state: string; clock: string; home: string; away: string; score: [number, number]; fair?: { home: number; draw: number; away: number } | null; error?: string }
 
 const ago = (wall: number, start?: number) => {
   if (!start) return ''
@@ -74,6 +74,7 @@ function LiveApp() {
                   <span>
                     <div>{m.home} vs {m.away}</div>
                     <div className={`st ${m.state}`}>{m.state === 'in' ? `LIVE · ${m.clock}` : m.state === 'pre' ? 'upcoming' : 'finished'}</div>
+                    {m.fair && <div className="fair-1x2" title="Pre-match fair probabilities from the Dixon–Coles model fit on the latest seasons">model {Math.round(m.fair.home * 100)} · {Math.round(m.fair.draw * 100)} · {Math.round(m.fair.away * 100)}%</div>}
                   </span>
                   <span className="sc">{m.state === 'pre' ? '' : `${m.score[0]}–${m.score[1]}`}</span>
                 </button>

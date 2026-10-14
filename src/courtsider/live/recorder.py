@@ -31,6 +31,7 @@ STATIONS = {
 LEAGUES = ("esp.1", "esp.copa_del_rey", "uefa.champions", "uefa.europa")
 SPANISH_ONLY_IN = ("uefa.champions", "uefa.europa", "esp.copa_del_rey")  # Spanish radio follows Spanish clubs there
 CHECK_S, POLL_S, TICK_S = 60.0, 5.0, 0.5
+STALL_S = 20.0  # no audio for this long: ffmpeg is stuck retrying a dead CDN mount, so restart it
 
 
 def live_matches() -> list[dict]:
@@ -82,6 +83,36 @@ SPANISH_CLUBS = {
 }
 
 
+class MelLog:
+    """Log-mel features of the radio audio (the audio itself is never stored), in 10-minute files, so
+    the audio goal model can later be retrained on radio (data.radio.audio_halves). Each file is
+    stamped with its start on the stream's audio clock, the same clock as transcript segments."""
+
+    BLOCK = 600 * 16000
+
+    def __init__(self, stem: str):
+        self.dir = LIVE_DIR / f"{stem}_mel"
+        self.buf = np.zeros(0, dtype=np.float32)
+        self.start, self.k = 0.0, 0
+
+    def feed(self, chunk: np.ndarray) -> list[dict]:
+        from courtsider.acoustic.extract import HOP, log_mel
+
+        self.buf = np.concatenate([self.buf, chunk])
+        out = []
+        need = self.BLOCK + 1024 - HOP  # exactly BLOCK / HOP frames, so files tile the clock without gaps
+        while len(self.buf) >= need:
+            mel = log_mel(self.buf[:need])
+            self.dir.mkdir(parents=True, exist_ok=True)
+            name = f"{self.k:04d}.npy"
+            np.save(self.dir / name, mel)
+            out.append(dict(kind="mel", file=name, audio_start=self.start, frames=len(mel), wall=time.time()))
+            self.buf = self.buf[self.BLOCK :]
+            self.start += self.BLOCK / 16000
+            self.k += 1
+        return out
+
+
 class Session:
     def __init__(self, station: str, matches: list[dict]):
         self.feed = EspnFeed()
@@ -93,7 +124,9 @@ class Session:
             first.home, first.away, vocab, model="small", fast=True, language="es", task="translate"
         )
         LIVE_DIR.mkdir(parents=True, exist_ok=True)
-        self.log = (LIVE_DIR / f"{datetime.now():%Y%m%d-%H%M%S}_radio-{station}.jsonl").open("a")
+        stem = f"{datetime.now():%Y%m%d-%H%M%S}_radio-{station}"
+        self.log = (LIVE_DIR / f"{stem}.jsonl").open("a")
+        self.mel = MelLog(stem)
         self.lock = threading.Lock()
         self.emit(
             [
@@ -122,7 +155,19 @@ class Session:
             self.log.flush()
 
     def watch_feed(self, stop: threading.Event) -> None:
+        n = 0
         while not stop.wait(POLL_S):
+            n += 1
+            if n % int(CHECK_S / POLL_S) == 0:  # matches kicking off after the session started
+                for m in live_matches():
+                    if m["id"] not in self.snaps:
+                        try:
+                            self.snaps[m["id"]] = snap = self.feed.snapshot(m["id"])
+                        except Exception:
+                            continue
+                        self.emit(
+                            [dict(kind="match_added", wall=time.time(), id=m["id"], home=snap.home, away=snap.away)]
+                        )
             for mid, prev in list(self.snaps.items()):
                 try:
                     cur = self.feed.snapshot(mid)
@@ -149,6 +194,7 @@ class Session:
         threading.Thread(target=self.watch_feed, args=(stop,), daemon=True).start()
         buf: list[np.ndarray] = []
         cond = threading.Condition()
+        last_audio = [time.time()]
 
         def reader():  # keep pulling audio while a tick runs, so we never fall behind real time
             while not stop.is_set():
@@ -159,6 +205,7 @@ class Session:
                     time.sleep(2)
                     procs.append(self._ffmpeg())
                     continue
+                last_audio[0] = time.time()
                 with cond:
                     buf.append(np.frombuffer(raw, dtype=np.float32))
                     cond.notify()
@@ -167,11 +214,16 @@ class Session:
         try:
             while not stop.is_set():
                 with cond:
-                    cond.wait_for(lambda: buf or stop.is_set(), timeout=5)
+                    cond.wait_for(lambda: buf or stop.is_set(), timeout=1)
                     chunks, buf[:] = list(buf), []
+                if time.time() - last_audio[0] > STALL_S:
+                    procs[-1].kill()  # unblocks the reader's read(), which then reconnects
+                    last_audio[0] = time.time()
                 if chunks:
-                    self.pipe.feed(np.concatenate(chunks))  # everything that arrived during the last tick
-                    self.emit([e for e in self.pipe.tick() if e["kind"] in ("segment", "detection", "status")])
+                    audio = np.concatenate(chunks)  # everything that arrived during the last tick
+                    self.pipe.feed(audio)
+                    events = [e for e in self.pipe.tick() if e["kind"] in ("segment", "detection", "status")]
+                    self.emit(events + self.mel.feed(audio))
         finally:
             procs[-1].terminate()
             self.log.close()

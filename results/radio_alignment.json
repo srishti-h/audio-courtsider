@@ -1,0 +1,12 @@
+[
+  {
+    "session": "20261013-122615_radio-ser",
+    "split": "test",
+    "delay_s": 96.5,
+    "goals": 3,
+    "goals_with_call": 2,
+    "events": 3,
+    "minutes": 22.0,
+    "mel_files": 0
+  }
+]

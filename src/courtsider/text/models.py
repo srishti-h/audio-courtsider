@@ -151,6 +151,8 @@ class TransformerModel:
                 opt.step()
                 sched.step()
                 step += 1
+                if dev.type == "mps" and step % 200 == 0:
+                    torch.mps.empty_cache()  # every batch shape adds to MPS's cache; a long run reached 9.5 GB
                 if step % log_every == 0:
                     rate = (time.time() - t0) / step
                     print(f"step {step}/{steps} loss {loss.item():.4f} {rate:.3f}s/step", flush=True)

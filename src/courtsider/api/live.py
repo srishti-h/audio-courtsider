@@ -40,9 +40,17 @@ def _model():
 @router.get("/api/live/matches")
 def live_matches() -> list[dict]:
     try:
-        return get_feed().matches()[:60]
+        matches = get_feed().matches()[:60]
     except Exception as e:  # feed down or offline: live listening still works without it
         return [dict(error=str(e))]
+    try:
+        from courtsider.pricing.current import fair_1x2
+
+        for m in matches:  # pre-match fair prices from the model fit on the latest seasons
+            m["fair"] = fair_1x2(m["home"], m["away"])
+    except Exception:  # no processed results yet (fresh clone): list matches without prices
+        pass
+    return matches
 
 
 @router.get("/api/live/sessions")

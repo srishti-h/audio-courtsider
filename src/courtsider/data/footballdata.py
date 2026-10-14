@@ -18,7 +18,24 @@ LEAGUE_CODES = {
     "germany_bundesliga": "D1",
     "france_ligue-1": "F1",
 }
-SEASONS = ("1213", "1314", "1415", "1516", "1617")
+# 2012-17 covers the SoccerNet matches; 2017 onwards keeps the pricing model current for live matches.
+SEASONS = (
+    "1213",
+    "1314",
+    "1415",
+    "1516",
+    "1617",
+    "1718",
+    "1819",
+    "1920",
+    "2021",
+    "2122",
+    "2223",
+    "2324",
+    "2425",
+    "2526",
+    "2627",
+)
 URL = "https://football-data.co.uk/mmz4281/{season}/{code}.csv"
 
 
@@ -27,7 +44,7 @@ def download(out_dir: Path = FOOTBALLDATA_DIR) -> None:
     for season in SEASONS:
         for code in LEAGUE_CODES.values():
             path = out_dir / f"{code}_{season}.csv"
-            if path.exists() and path.stat().st_size > 0:
+            if path.exists() and path.stat().st_size > 0 and season != SEASONS[-1]:  # current season keeps growing
                 continue
             r = requests.get(URL.format(season=season, code=code), timeout=30, headers={"User-Agent": "Mozilla/5.0"})
             r.raise_for_status()
@@ -45,11 +62,9 @@ def load(root: Path = FOOTBALLDATA_DIR) -> pd.DataFrame:
     for path in sorted(root.glob("*.csv")):
         code, season = path.stem.split("_")
         df = pd.read_csv(path, encoding="latin1").dropna(subset=["HomeTeam", "FTHG"])
-        df["league"] = code_to_league[code]
-        df["fd_season"] = season
-        frames.append(df)
+        frames.append(df.assign(league=code_to_league[code], fd_season=season))
     df = pd.concat(frames, ignore_index=True)
-    df["date"] = pd.to_datetime(df["Date"], dayfirst=True, format="mixed")
+    df = df.assign(date=pd.to_datetime(df["Date"], dayfirst=True, format="mixed"))
     out = df[["league", "fd_season", "date", "HomeTeam", "AwayTeam", "FTHG", "FTAG"]].rename(
         columns={"HomeTeam": "home", "AwayTeam": "away", "FTHG": "home_goals", "FTAG": "away_goals"}
     )

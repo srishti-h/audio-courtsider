@@ -85,3 +85,78 @@ def test_recorder_reconnects_when_the_stream_drops(tmp_path, monkeypatch):
     s.run(stop)
     log = (next(tmp_path.glob("*_radio-test.jsonl"))).read_text()
     assert log.count("stream_restart") >= 2 and FakePipe.seconds >= 4.0
+
+
+def test_recorder_restarts_a_stalled_stream(tmp_path, monkeypatch):
+    import subprocess
+    import threading
+
+    from courtsider.live import recorder
+
+    class FakeFeed:
+        def snapshot(self, mid):
+            return Snapshot(mid, "H", "A", (0, 0), "1'", "in", {})
+
+    class FakePipe:
+        def __init__(self, *a, **k):
+            pass
+
+    monkeypatch.setattr(recorder, "LIVE_DIR", tmp_path)
+    monkeypatch.setattr(recorder, "EspnFeed", FakeFeed)
+    monkeypatch.setattr(recorder, "LivePipeline", FakePipe)
+    monkeypatch.setattr(recorder, "STALL_S", 1.0)
+    # a "stream" that connects but never sends a byte, like ffmpeg retrying a dead CDN mount
+    monkeypatch.setattr(
+        recorder.Session, "_ffmpeg", lambda self: subprocess.Popen(["sleep", "30"], stdout=subprocess.PIPE)
+    )
+    s = recorder.Session("ser", [dict(id="1")])
+    stop = threading.Event()
+    threading.Timer(4.0, stop.set).start()
+    s.run(stop)
+    assert next(tmp_path.glob("*_radio-ser.jsonl")).read_text().count("stream_restart") >= 1
+
+
+def test_mel_log_tiles_the_audio_clock(tmp_path, monkeypatch):
+    import json
+
+    import numpy as np
+
+    from courtsider.live import recorder
+
+    monkeypatch.setattr(recorder, "LIVE_DIR", tmp_path)
+    monkeypatch.setattr(recorder.MelLog, "BLOCK", 2 * 16000)
+    log = recorder.MelLog("s")
+    rng = np.random.default_rng(0)
+    events = []
+    for _ in range(10):  # 5 s of audio in 0.5 s chunks -> two complete 2 s files
+        events += log.feed(rng.normal(size=8000).astype(np.float32))
+    assert [e["audio_start"] for e in events] == [0.0, 2.0]
+    assert all(e["frames"] == 100 for e in events)
+    assert np.load(tmp_path / "s_mel" / "0001.npy").shape == (100, 64)
+    json.dumps(events)
+
+
+def test_radio_delay_estimate_lines_up_goal_calls():
+    import numpy as np
+    import pandas as pd
+
+    from courtsider.data import radio
+
+    goals = np.array([100.0, 500.0, 900.0])
+    calls = goals + 30  # the radio is 30 s behind ESPN's clock
+    segs = pd.DataFrame(dict(audio_start=np.r_[calls, 300.0], text=["GOOOAL!", "goal by Pedri", "he scores", "a pass"]))
+    hits = radio.delay_hits(segs, lambda d: goals + d)
+    assert abs(radio.best_delay(hits, len(goals)) - 30) <= 2
+    assert radio.best_delay(hits, 1) == radio.DEFAULT_DELAY  # too few goals to trust
+
+
+def test_espn_names_map_to_football_data_teams():
+    from courtsider.pricing.current import _match
+
+    teams = ["Ath Madrid", "Ath Bilbao", "Real Madrid", "Man United", "Man City", "Nott'm Forest", "Sociedad", "Betis"]
+    assert _match("Atlético Madrid", teams) == "Ath Madrid"
+    assert _match("Athletic Club", teams) == "Ath Bilbao"
+    assert _match("Manchester United", teams) == "Man United"
+    assert _match("Nottingham Forest", teams) == "Nott'm Forest"
+    assert _match("Real Betis", teams) == "Betis"
+    assert _match("Galatasaray", teams) is None
