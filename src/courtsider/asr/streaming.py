@@ -54,7 +54,12 @@ def _hypothesis(
     audio: np.ndarray, offset: float, repo: str, prompt: str | None, language: str = "en", task: str = "transcribe"
 ) -> list[Word]:
     """One Whisper pass. language="es", task="translate" turns Spanish commentary into English text."""
+    import mlx.core as mx
     import mlx_whisper
+
+    # every pass has a new buffer length, and MLX caches each freed buffer: unbounded, a 2 h radio
+    # session grew to 32 GB of GPU memory and starved the whole machine
+    mx.set_cache_limit(1 << 30)
 
     res = mlx_whisper.transcribe(
         audio,

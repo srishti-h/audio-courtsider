@@ -28,7 +28,7 @@ from courtsider.paths import PROCESSED, RESULTS
 from courtsider.text.dataset import LOOKAHEAD, LOOKBACK, build_inputs, label_segments
 
 GOAL_CALL = re.compile(r"\bgo+a+l|\bgo+l\b|\bscores?\b|\bscored\b", re.I)
-DELAYS = np.arange(0.0, 120.5, 1.0)
+DELAYS = np.arange(-30.0, 120.5, 1.0)  # negative: ESPN's match-clock times can trail the real moment
 DEFAULT_DELAY = 20.0  # used when a session has too few goals to estimate its own
 TEST_FRACTION = 0.3
 

@@ -1,12 +1,22 @@
 [
   {
     "session": "20261013-122615_radio-ser",
-    "split": "test",
-    "delay_s": 96.5,
+    "split": "train",
+    "delay_s": -4.5,
     "goals": 3,
-    "goals_with_call": 2,
+    "goals_with_call": 1,
     "events": 3,
     "minutes": 22.0,
     "mel_files": 0
+  },
+  {
+    "session": "20261014-120158_radio-ser",
+    "split": "test",
+    "delay_s": -4.5,
+    "goals": 12,
+    "goals_with_call": 8,
+    "events": 13,
+    "minutes": 112.6,
+    "mel_files": 11
   }
 ]

@@ -120,6 +120,7 @@ def main() -> None:
     ap.add_argument("--lr", type=float, default=2e-5)
     ap.add_argument("--neg-frac", type=float, default=0.4)
     ap.add_argument("--rare-oversample", type=int, default=6)
+    ap.add_argument("--scratch", action="store_true", help="train from distilroberta-base instead of the current model")
     args = ap.parse_args()
 
     # the current model's scores only change when its weights or the radio test set do
@@ -141,7 +142,8 @@ def main() -> None:
     gc.collect()
     print(f"candidate train rows: {report['train_rows']}", flush=True)
 
-    cand = TransformerModel.load(MODELS / "text_extractor").fit(texts, y, team, epochs=args.epochs, lr=args.lr)
+    init = TransformerModel() if args.scratch else TransformerModel.load(MODELS / "text_extractor")
+    cand = init.fit(texts, y, team, epochs=args.epochs, lr=args.lr)
     del texts, y, team
     gc.collect()
     cand.save(MODELS / "text_extractor_recent")
