@@ -113,6 +113,25 @@ def training_set(neg_frac: float, rare_oversample: int, per_source: int) -> pd.D
     return pd.concat([tr] + [tr[rare]] * rare_oversample).sample(frac=1, random_state=0)
 
 
+def _train_arrays(neg_frac: float, rare_oversample: int, per_source: int):
+    tr = training_set(neg_frac, rare_oversample, per_source)
+    return tr.source.value_counts().to_dict(), tr.input.tolist(), tr[EVENT_TYPES].to_numpy(), tr.team.to_numpy()
+
+
+def _current_report() -> dict:
+    return evaluate(TransformerModel.load(MODELS / "text_extractor"), *eval_data())[0]
+
+
+def _in_child(fn, *args):
+    """Run fn in a fresh process. Building the big pandas tables in the training process itself made
+    every MPS training step ~10-20x slower (7 s instead of 0.4 s), even after freeing them."""
+    from concurrent.futures import ProcessPoolExecutor
+    from multiprocessing import get_context
+
+    with ProcessPoolExecutor(1, mp_context=get_context("spawn")) as pool:
+        return pool.submit(fn, *args).result()
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--epochs", type=int, default=1)
@@ -130,16 +149,12 @@ def main() -> None:
     if cached.get("key") == key:
         report = dict(current=cached["report"])
     else:
-        report = dict(current=evaluate(TransformerModel.load(MODELS / "text_extractor"), *eval_data())[0])
+        report = dict(current=_in_child(_current_report))
         cache.write_text(json.dumps(dict(key=key, report=report["current"])))
 
-    # build the training set in its own scope and keep only what fit() needs: unified memory is shared
-    # with the GPU, and holding every table through training pushed a busy Mac into swap (10x slower steps)
-    tr = training_set(args.neg_frac, args.rare_oversample, args.per_source)
-    report["train_rows"] = tr.source.value_counts().to_dict()
-    texts, y, team = tr.input.tolist(), tr[EVENT_TYPES].to_numpy(), tr.team.to_numpy()
-    del tr
-    gc.collect()
+    report["train_rows"], texts, y, team = _in_child(
+        _train_arrays, args.neg_frac, args.rare_oversample, args.per_source
+    )
     print(f"candidate train rows: {report['train_rows']}", flush=True)
 
     init = TransformerModel() if args.scratch else TransformerModel.load(MODELS / "text_extractor")
