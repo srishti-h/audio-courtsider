@@ -107,7 +107,10 @@ class TransformerModel:
         self.net = TransformerExtractor(backbone).to(device())
 
     def _encode(self, texts: list[str]):
-        enc = self.tok(texts, padding=True, truncation=True, max_length=self.max_len, return_tensors="pt")
+        # lengths rounded up to 16 tokens: a handful of shapes for MPS to compile instead of one per length
+        enc = self.tok(
+            texts, padding=True, pad_to_multiple_of=16, truncation=True, max_length=self.max_len, return_tensors="pt"
+        )
         return enc["input_ids"].to(device()), enc["attention_mask"].to(device())
 
     def fit(
@@ -126,7 +129,7 @@ class TransformerModel:
             np.clip((1 - prior) / np.maximum(prior, 1e-4), 1, 20) ** 0.5, dtype=torch.float32, device=dev
         )
         bce = torch.nn.BCEWithLogitsLoss(pos_weight=pos_weight)
-        ce = torch.nn.CrossEntropyLoss()
+        ce = torch.nn.CrossEntropyLoss(ignore_index=TEAM_CLASSES.index("unknown"))
         team_idx = np.array([TEAM_CLASSES.index(t) for t in team])
         opt = torch.optim.AdamW(self.net.parameters(), lr=lr, weight_decay=0.01)
         steps = epochs * int(np.ceil(len(texts) / bs))
@@ -141,10 +144,10 @@ class TransformerModel:
                 ids, mask = self._encode([texts[j] for j in b])
                 ev_logits, team_logits = self.net(ids, mask)
                 loss = bce(ev_logits, torch.tensor(y[b], dtype=torch.float32, device=dev))
-                has_team = torch.tensor(team_idx[b] != 2, device=dev)
-                if has_team.any():
-                    tb = torch.tensor(team_idx[b], device=dev)
-                    loss = loss + 0.5 * ce(team_logits[has_team], tb[has_team])
+                # ignore_index, not boolean-mask indexing: a data-dependent row count is a new tensor shape
+                # (and a new MPS graph) almost every batch, which made steps 10-100x slower over time
+                if (team_idx[b] != 2).any():
+                    loss = loss + 0.5 * ce(team_logits, torch.tensor(team_idx[b], device=dev))
                 opt.zero_grad()
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(self.net.parameters(), 1.0)
