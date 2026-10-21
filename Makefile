@@ -53,3 +53,8 @@ refresh:          ## pull recent data (football-data, ESPN 2025/26+, recorded ra
 	uv run python -m courtsider.eval.run_text
 	uv run python -m courtsider.eval.run_market
 	uv run python -m courtsider.eval.run_market_audio
+	uv run python -m courtsider.eval.run_fast_text
+	uv run python -m courtsider.live.report
+	uv run python scripts/export_demo.py
+	git add results web/public/demo
+	git diff --cached --quiet || (git commit -m "Refresh results $$(date +%F)" && git push)  # publishes the site

@@ -112,6 +112,7 @@ def main() -> None:
         "audio_goal",
         "market_audio",
         "fast_text",
+        "live",
     ):
         p = RESULTS / f"{name}.json"
         if p.exists():

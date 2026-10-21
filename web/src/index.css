@@ -256,3 +256,10 @@ footer { margin-top: 26px; color: var(--faint); font-size: 11px; }
 .guide-hint b { color: var(--gold); }
 .guide-hint .guide-actions { margin-top: 10px; }
 .fair-1x2 { color: var(--gold); font-size: 11px; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.recorder-steps { margin: 4px 0 0; padding-left: 18px; }
+.table-scroll { overflow-x: auto; }
+.edge-table td.lead { color: var(--up); font-weight: 600; }
+.edge-table td.faint { color: var(--faint); }
+.edge-table td.quote { color: var(--muted); font-style: italic; min-width: 220px; }
+.kpis.kpis-3 { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 640px) { .kpis.kpis-3 { grid-template-columns: 1fr; } }

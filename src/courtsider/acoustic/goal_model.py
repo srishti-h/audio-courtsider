@@ -20,6 +20,9 @@ from courtsider.acoustic.extract import FPS, HOP, SR, feature_path
 from courtsider.paths import MODELS, PROCESSED, RESULTS
 
 WINDOW = 6.0  # target: a goal happened in the last 6 s
+ONSET_S = 1.0  # the first second after a goal, up-weighted to reward early detection
+MAX_FA_PER_MATCH = 3.0  # false-alarm budget for picking the operating threshold
+MATCH_MIN = 95.0
 BASELINE_S = 30.0
 CROP_S = 40.0
 
@@ -39,12 +42,20 @@ def normalise(mel: np.ndarray) -> np.ndarray:
     return np.concatenate([(x - ema) / 2.0, (x + 8.0) / 6.0], axis=1)
 
 
-def labels(n: int, goal_times: np.ndarray) -> np.ndarray:
+def labels(n: int, goal_times: np.ndarray, window: float = WINDOW) -> np.ndarray:
     t = frame_times(n)
     y = np.zeros(n, dtype=np.float32)
     for g in goal_times:
-        y[(t >= g) & (t <= g + WINDOW)] = 1.0
+        y[(t >= g) & (t <= g + window)] = 1.0
     return y
+
+
+def onset_weights(n: int, goal_times: np.ndarray, weight: float) -> np.ndarray:
+    t = frame_times(n)
+    w = np.ones(n, dtype=np.float32)
+    for g in goal_times:
+        w[(t >= g) & (t <= g + ONSET_S)] = weight
+    return w
 
 
 class CausalTCN(torch.nn.Module):
@@ -88,7 +99,9 @@ def _device():
     return torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 
 
-def train(halves: list[dict], epochs: int, seed: int = 0) -> CausalTCN:
+def train(
+    halves: list[dict], epochs: int, seed: int = 0, window: float = WINDOW, onset_weight: float = 1.0
+) -> CausalTCN:
     rng = np.random.default_rng(seed)
     torch.manual_seed(seed)
     dev = _device()
@@ -96,7 +109,8 @@ def train(halves: list[dict], epochs: int, seed: int = 0) -> CausalTCN:
     for h in halves:
         x = normalise(np.load(h["path"]))
         if len(x) >= int(CROP_S * FPS):  # a few broadcasts are truncated to seconds of audio
-            data.append((x, labels(len(x), h["goals"]), h["goals"]))
+            n = len(x)
+            data.append((x, labels(n, h["goals"], window), h["goals"], onset_weights(n, h["goals"], onset_weight)))
     print(f"training on {len(data)} halves", flush=True)
     model = CausalTCN().to(dev)
     opt = torch.optim.AdamW(model.parameters(), lr=2e-3, weight_decay=1e-4)
@@ -107,9 +121,9 @@ def train(halves: list[dict], epochs: int, seed: int = 0) -> CausalTCN:
     for ep in range(epochs):
         tot = 0.0
         for _ in range(steps_per_epoch):
-            xb, yb = [], []
+            xb, yb, wb = [], [], []
             for _ in range(32):
-                x, y, g = data[rng.integers(len(data))]
+                x, y, g, w = data[rng.integers(len(data))]
                 if len(g) and rng.random() < 0.5:  # half the crops contain a goal
                     c = int(rng.choice(g) * FPS) - int(rng.uniform(5, CROP_S - 10) * FPS)
                 else:
@@ -117,10 +131,14 @@ def train(halves: list[dict], epochs: int, seed: int = 0) -> CausalTCN:
                 c = int(np.clip(c, 0, max(0, len(x) - crop)))
                 xb.append(x[c : c + crop])
                 yb.append(y[c : c + crop])
+                wb.append(w[c : c + crop])
             xb = torch.tensor(np.stack(xb), device=dev)
             yb = torch.tensor(np.stack(yb), device=dev)
+            wb = torch.tensor(np.stack(wb), device=dev)
             logits = model(xb)[:, rf:]  # skip the warm-up frames without full context
-            loss = torch.nn.functional.binary_cross_entropy_with_logits(logits, yb[:, rf:], pos_weight=pos_weight)
+            loss = torch.nn.functional.binary_cross_entropy_with_logits(
+                logits, yb[:, rf:], weight=wb[:, rf:], pos_weight=pos_weight
+            )
             opt.zero_grad()
             loss.backward()
             opt.step()
@@ -172,6 +190,19 @@ def evaluate(tracks: list[tuple[dict, np.ndarray, np.ndarray]], th: float) -> di
         delay_p25=round(float(np.percentile(delays, 25)), 2) if delays else None,
         false_alarms_per_min=round(fa / max(minutes, 1e-9), 4),
     )
+
+
+def select(grid: list[dict]) -> dict:
+    """Operating point: within the false-alarm budget, catch the most goals with a median delay
+    under 1 s; if no threshold gets under 1 s, take the fastest one in budget."""
+    ok = [r for r in grid if r["false_alarms_per_min"] * MATCH_MIN <= MAX_FA_PER_MATCH and r["delay_p50"] is not None]
+    fast = [r for r in ok if r["delay_p50"] < 1.0]
+    if fast:
+        return max(fast, key=lambda r: r["recall"])
+    return min(ok or grid, key=lambda r: r["delay_p50"] if r["delay_p50"] is not None else 1e9)
+
+
+THRESHOLDS = (0.03, 0.05, 0.07, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7)
 
 
 def main() -> None:

@@ -35,7 +35,7 @@ def test_lead_time_report_matches_detections_before_the_feed():
     ]
     s = summarize(events)
     assert s["goals"] == [dict(clock="23'", team="home", text_lead_s=5.5, crowd_lead_s=9.5)]
-    assert s["false_alarms"] == {"text": 1, "crowd": 0} and s["audio_minutes"] == 10.0
+    assert s["false_alarms"] == {"text": 1, "audio": 0, "crowd": 0} and s["audio_minutes"] == 10.0
 
 
 def test_fast_text_detections_count_as_text():
@@ -160,3 +160,17 @@ def test_espn_names_map_to_football_data_teams():
     assert _match("Nottingham Forest", teams) == "Nott'm Forest"
     assert _match("Real Betis", teams) == "Betis"
     assert _match("Galatasaray", teams) is None
+
+
+def test_lead_report_anchors_on_the_real_goal_time(monkeypatch):
+    from courtsider.live import report
+
+    monkeypatch.setattr(report, "goal_walls", lambda mid: [1000.0])
+    events = [
+        dict(kind="session", home="H", away="A"),
+        dict(kind="detection", source="text", event="goal", wall=950.0, text="goal elsewhere"),  # other match
+        dict(kind="detection", source="text", event="goal", wall=1004.0, text="GOOOL de Lamine Yamal"),
+        dict(kind="feed", event="goal", wall=1060.0, clock="12'", team="home", match_id="1", home="H", away="A"),
+    ]
+    g = report.summarize(events)["goals"][0]
+    assert g["text_lead_s"] == 56.0 and g["text_after_goal_s"] == 4.0 and g["match"] == "H vs A"
