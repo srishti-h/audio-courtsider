@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 export type AudioSource = 'mic' | 'tab' | 'file'
+export type Engine = 'server' | 'browser'
 
 export interface LiveSegment { wall: number; text: string; probs: Record<string, number>; team: { home: number; away: number } }
 export interface LiveDetection { wall: number; source: 'text' | 'text-fast' | 'crowd' | 'audio'; event: string; p: number | null; team: string | null; text?: string }
@@ -24,6 +25,8 @@ export interface LiveState {
   asrLatency?: number
   vocabulary: string[]
   hasFeed?: boolean
+  loading?: { what: string; file?: string; progress?: number }
+  audioModel?: boolean
 }
 
 const initial: LiveState = {
@@ -79,7 +82,10 @@ export function useLive() {
     setState((s) => ({ ...s, status: s.status === 'error' ? 'error' : 'stopped' }))
   }, [])
 
-  const start = useCallback(async (opts: { source: AudioSource; file?: File; matchId?: string; home?: string; away?: string; threshold: number }) => {
+  const start = useCallback(async (opts: {
+    source: AudioSource; file?: File; matchId?: string; home?: string; away?: string; threshold: number
+    engine?: Engine; whisper?: 'base' | 'small'; language?: 'english' | 'spanish'; modelsUrl?: string
+  }) => {
     cleanup.current()
     setState({ ...initial, status: 'connecting' })
     let media: MediaStream | null = null
@@ -98,15 +104,44 @@ export function useLive() {
       setState((s) => ({ ...s, status: 'error', error: err?.message ?? String(err) }))
       return
     }
-    const q = new URLSearchParams({ threshold: String(opts.threshold) })
-    if (opts.matchId) q.set('match_id', opts.matchId)
-    if (opts.home) q.set('home', opts.home)
-    if (opts.away) q.set('away', opts.away)
-    const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/live?${q}`)
-    ws.binaryType = 'arraybuffer'
-    ws.onmessage = (m) => setState((s) => reduce(s, JSON.parse(m.data)))
-    ws.onerror = () => setState((s) => ({ ...s, status: 'error', error: 'Lost the connection to the local backend (:8000).' }))
-    ws.onopen = () => setState((s) => ({ ...s, status: 'listening' })) // attach before any await so the event is never missed
+    // transport: the local backend over a WebSocket, or the in-browser engine in a Web Worker
+    let send: (b: Float32Array<ArrayBuffer>) => void, closeTransport: () => void
+    if (opts.engine === 'browser') {
+      const w = new Worker(new URL('./engine/worker.ts', import.meta.url), { type: 'module' })
+      try {
+        await new Promise<void>((resolve, reject) => {
+          w.onmessage = (m) => {
+            const d = m.data
+            if (d.type === 'events') setState((s) => d.events.reduce(reduce, s))
+            else if (d.type === 'loading') setState((s) => ({ ...s, loading: d }))
+            else if (d.type === 'ready') { setState((s) => ({ ...s, status: 'listening', loading: undefined, audioModel: d.audioModel })); resolve() }
+            else if (d.type === 'failed') reject(new Error(d.message))
+          }
+          w.onerror = (e) => reject(new Error(e.message || 'The in-browser engine crashed.'))
+          w.postMessage({ type: 'start', opts: { modelsUrl: opts.modelsUrl, whisper: opts.whisper ?? 'base', language: opts.language ?? 'english',
+            threshold: opts.threshold, matchId: opts.matchId, home: opts.home, away: opts.away } })
+        })
+      } catch (err: any) {
+        w.terminate()
+        media?.getTracks().forEach((t) => t.stop())
+        setState((s) => ({ ...s, status: 'error', error: err?.message ?? String(err), loading: undefined }))
+        return
+      }
+      send = (b) => w.postMessage({ type: 'audio', pcm: b }, [b.buffer])
+      closeTransport = () => { w.postMessage({ type: 'stop' }); w.terminate() }
+    } else {
+      const q = new URLSearchParams({ threshold: String(opts.threshold) })
+      if (opts.matchId) q.set('match_id', opts.matchId)
+      if (opts.home) q.set('home', opts.home)
+      if (opts.away) q.set('away', opts.away)
+      const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/live?${q}`)
+      ws.binaryType = 'arraybuffer'
+      ws.onmessage = (m) => setState((s) => reduce(s, JSON.parse(m.data)))
+      ws.onerror = () => setState((s) => ({ ...s, status: 'error', error: 'Lost the connection to the local backend (:8000).' }))
+      ws.onopen = () => setState((s) => ({ ...s, status: 'listening' })) // attach before any await so the event is never missed
+      send = (b) => { if (ws.readyState === WebSocket.OPEN) ws.send(b) }
+      closeTransport = () => ws.close()
+    }
 
     const ctx = new AudioContext({ sampleRate: 16000 })
     await ctx.audioWorklet.addModule(URL.createObjectURL(new Blob([WORKLET], { type: 'application/javascript' })))
@@ -124,11 +159,11 @@ export function useLive() {
     tap.port.onmessage = (ev: MessageEvent<Float32Array>) => {
       pending.push(ev.data)
       n += ev.data.length
-      if (n >= 4000 && ws.readyState === WebSocket.OPEN) { // ~0.25 s per frame
+      if (n >= 4000) { // ~0.25 s per frame
         const buf = new Float32Array(n)
         let o = 0
         for (const p of pending) { buf.set(p, o); o += p.length }
-        ws.send(buf.buffer)
+        send(buf)
         pending = []
         n = 0
       }
@@ -139,7 +174,7 @@ export function useLive() {
       player?.pause()
       media?.getTracks().forEach((t) => t.stop())
       ctx.close()
-      ws.close()
+      closeTransport()
     }
   }, [stop])
 

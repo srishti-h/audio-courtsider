@@ -7,8 +7,8 @@ export const EXPLAIN: Record<string, { title: string; body: string }> = {
     body: 'A "courtsider" sits in the stadium and bets the moment something happens, before the official data feed tells the market. This project does that by listening instead: it turns live commentary and crowd noise into calibrated beliefs about goals, penalties and red cards, then trades on them in a simulated exchange against a market maker that only reprices when the official feed arrives. The question it answers: how many seconds of edge does listening buy, and what is that worth?',
   },
   tabs: {
-    title: 'Replay vs Live',
-    body: 'Replay re-runs real goals from held-out SoccerNet matches through the whole system: real commentary, real event times, simulated prices. Live listens to a match happening right now (browser tab, microphone or audio file) and times every detection against ESPN\'s live-score feed. Live needs speech recognition on your own machine, so on this public site it only explains itself.',
+    title: 'Replay, Live and Recorder',
+    body: 'Replay re-runs real goals from held-out SoccerNet matches through the whole system: real commentary, real event times, simulated prices. Live listens to a match happening right now (a browser tab, your microphone or an audio file), running Whisper and the models in your browser, and times every detection against ESPN\'s live-score feed. Recorder shows what the unattended radio recorder has logged across real 2026 matches.',
   },
   github: { title: 'Source code', body: 'Everything is open: data pipeline, models, exchange, simulator, evaluations and this dashboard, with the full methods and results in the README.' },
   timeline: {
@@ -67,6 +67,7 @@ export const EXPLAIN: Record<string, { title: string; body: string }> = {
     title: 'Live mode',
     body: 'Runs the same models on a match happening now. Pick a live match from ESPN\'s scoreboard, point it at the commentary (a browser tab streaming the game, your microphone near the TV, or a saved file), and it shows the live transcript, beliefs, crowd meter, and how many seconds each detection beat the official feed by.',
   },
+  'live-engine': { title: 'Where the models run', body: 'In this browser: Whisper (base or small), the event model and the audio goal model download once and run on your GPU via WebGPU, so audio never leaves your device. Spanish → English translates Spanish commentary first, as the radio recorder does. Locally, the same models can also run on the developer\'s server.' },
   'live-match': { title: 'Pick the match', body: 'Live matches from ESPN\'s public scoreboard, polled every 5 s. The lineups become Whisper\'s vocabulary so player names are spelled right. The gold numbers are the pricing model\'s pre-match home · draw · away probabilities, fit on results up to this week. You can also type the teams if the match isn\'t listed (no feed timing then).' },
   'live-audio': { title: 'Point it at the commentary', body: 'Audio is resampled to 16 kHz in the browser and streamed to the local server, where Whisper transcribes it in real time. No audio is stored; only text and detections are logged for the lead-time report. The threshold sets how confident the model must be before a detection fires.' },
   crowd: { title: 'Crowd meter', body: 'A hand-built signal: high-frequency crowd energy compared with the last minute or so. A roar 4 standard deviations above normal fires a detection. Fast, but it can\'t tell which team scored.' },

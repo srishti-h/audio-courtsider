@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Meters, ProbChart, Scoreboard, Transcript } from './components'
-import { STATIC, REPO_URL } from './source'
-import { type AudioSource, useLive } from './useLive'
+import { matches as espnMatches } from './engine/espn'
+import { MODELS_URL, STATIC } from './source'
+import { type AudioSource, type Engine, useLive } from './useLive'
 
 interface FeedMatch { id: string; name: string; state: string; clock: string; home: string; away: string; score: [number, number]; fair?: { home: number; draw: number; away: number } | null; error?: string }
 
@@ -12,24 +13,10 @@ const ago = (wall: number, start?: number) => {
 }
 
 export function LiveView() {
-  if (STATIC) return <LiveUnavailable />
   return <LiveApp />
 }
 
-function LiveUnavailable() {
-  return (
-    <div className="card span-12" style={{ marginTop: 16 }} data-explain="live">
-      <h2>Live mode</h2>
-      <p className="hint">
-        Live mode listens to a match while you watch it: your microphone, or the audio of a browser tab streaming the game.
-        Streaming Whisper turns the commentary into text, the event model and crowd-roar detector fire in real time, and a
-        live-score feed timestamps when the "official" world finds out. That way you see how many seconds the commentary
-        wins by. Speech recognition runs on your own machine, so this page can't do it. Clone the{' '}
-        <a href={REPO_URL}>repo</a> and run <code>make serve</code> and <code>make web</code>, then open the Live tab.
-      </p>
-    </div>
-  )
-}
+const WEBGPU = typeof navigator !== 'undefined' && 'gpu' in navigator
 
 function LiveApp() {
   const { state, start, stop } = useLive()
@@ -40,9 +27,20 @@ function LiveApp() {
   const [threshold, setThreshold] = useState(0.5)
   const [manual, setManual] = useState({ home: '', away: '' })
   const [now, setNow] = useState(Date.now() / 1000)
+  const [engine, setEngine] = useState<Engine>(STATIC ? 'browser' : 'server')
+  const [whisper, setWhisper] = useState<'base' | 'small'>('base')
+  const [language, setLanguage] = useState<'english' | 'spanish'>('english')
+  const [modelsReady, setModelsReady] = useState<boolean | null>(null)
 
   useEffect(() => {
-    const load = () => fetch('/api/live/matches').then((r) => r.json()).then((m: FeedMatch[]) => setMatches(m.filter((x) => !x.error)))
+    if (engine !== 'browser') return
+    fetch(new URL('meta.json', new URL(MODELS_URL, location.href)).href).then((r) => setModelsReady(r.ok)).catch(() => setModelsReady(false))
+  }, [engine])
+
+  useEffect(() => {
+    const load = () => (STATIC ? espnMatches() : fetch('/api/live/matches').then((r) => r.json()))
+      .then((m: FeedMatch[]) => setMatches(m.filter((x) => !x.error)))
+      .catch(() => setMatches([]))
     load()
     const id = setInterval(load, 30000)
     return () => clearInterval(id)
@@ -88,6 +86,44 @@ function LiveApp() {
           </div>
           <div className="card" data-explain="live-audio">
             <h2>2 · Point it at the commentary</h2>
+            <div className="controls" style={{ background: 'var(--bg-2)', marginBottom: 8 }} data-explain="live-engine">
+              {!STATIC && (
+                <>
+                  <label>Run models</label>
+                  <div className="seg">
+                    <button className={engine === 'server' ? 'on' : ''} onClick={() => setEngine('server')}>Local server</button>
+                    <button className={engine === 'browser' ? 'on grana' : ''} onClick={() => setEngine('browser')}>This browser</button>
+                  </div>
+                </>
+              )}
+              {engine === 'browser' && (
+                <>
+                  <label>Whisper</label>
+                  <div className="seg">
+                    <button className={whisper === 'base' ? 'on' : ''} onClick={() => setWhisper('base')}>base · faster</button>
+                    <button className={whisper === 'small' ? 'on grana' : ''} onClick={() => setWhisper('small')}>small · more accurate</button>
+                  </div>
+                  <label>Commentary</label>
+                  <div className="seg">
+                    <button className={language === 'english' ? 'on' : ''} onClick={() => setLanguage('english')}>English</button>
+                    <button className={language === 'spanish' ? 'on grana' : ''} onClick={() => setLanguage('spanish')}>Spanish → English</button>
+                  </div>
+                </>
+              )}
+            </div>
+            {engine === 'browser' && modelsReady === false && (
+              <p className="hint" style={{ color: 'var(--down)' }}>
+                The in-browser models haven't been published yet, so Live mode can't run here. It works on a local copy:
+                run <code>python scripts/export_web_models.py</code>, then <code>make web</code>.
+              </p>
+            )}
+            {engine === 'browser' && modelsReady !== false && (
+              <p className="hint">
+                Everything runs on this device: Whisper, the event model and the audio goal model download once
+                (~{whisper === 'base' ? '300' : '650'} MB, then cached) and nothing you play leaves your browser.
+                {WEBGPU ? ' Your browser has WebGPU, so it runs on the GPU.' : ' This browser has no WebGPU, so it will run slowly on the CPU: use desktop Chrome or Edge for real time.'}
+              </p>
+            )}
             <div className="controls" style={{ background: 'var(--bg-2)' }}>
               <label>Audio</label>
               <div className="seg">
@@ -106,8 +142,9 @@ function LiveApp() {
             </p>
             <button
               className="btn"
-              disabled={!pick && !(manual.home && manual.away)}
-              onClick={() => start({ source, file, threshold, matchId: pick?.id, home: pick?.home ?? manual.home, away: pick?.away ?? manual.away })}
+              disabled={(!pick && !(manual.home && manual.away)) || (engine === 'browser' && modelsReady === false)}
+              onClick={() => start({ source, file, threshold, matchId: pick?.id, home: pick?.home ?? manual.home, away: pick?.away ?? manual.away,
+                engine, whisper, language, modelsUrl: new URL(MODELS_URL, location.href).href })}
             >
               ● Start listening
             </button>
@@ -123,7 +160,9 @@ function LiveApp() {
             clock={state.clock || (state.status === 'connecting' ? 'connecting…' : 'live')}
             note={state.hasFeed ? 'score from the live feed · commentary from your audio' : 'no live feed (teams typed in) · commentary from your audio'} />
           <div className="controls">
-            <span><span className="live-dot" />Listening · {Math.floor(state.audioSeconds / 60)}m {Math.round(state.audioSeconds % 60)}s of audio</span>
+            {state.status === 'connecting'
+              ? <span className="loading-models">Loading {state.loading?.what ?? 'models'}{state.loading?.progress != null ? ` · ${Math.round(state.loading.progress)}%` : '…'}</span>
+              : <span><span className="live-dot" />Listening · {Math.floor(state.audioSeconds / 60)}m {Math.round(state.audioSeconds % 60)}s of audio</span>}
             {state.asrLatency !== undefined && <span className="hint">speech → text lag <b>{state.asrLatency.toFixed(1)}s</b></span>}
             {state.vocabulary.length > 0 && <span className="hint">name-biased with {state.vocabulary.length} lineup names</span>}
             <div className="chips"><button className="btn ghost" onClick={stop}>■ Stop</button></div>
@@ -137,8 +176,12 @@ function LiveApp() {
               <h2>What the bot believes <small>last 2 minutes</small></h2>
               <ProbChart points={points} now={now} marks={marks} />
               <Meters goal={last?.probs.goal ?? 0} penalty={last?.probs.penalty ?? 0} red={last?.probs.red_card ?? 0} team={last?.team} />
-              <h2 style={{ marginTop: 14 }}>Crowd <small>high-band energy vs the recent baseline · fires at z ≥ 4</small></h2>
-              <div className="roar" data-explain="crowd"><i style={{ width: `${Math.min(100, Math.max(0, (lastCrowd?.z ?? 0) / 8) * 100)}%` }} /></div>
+              {lastCrowd?.z != null && (
+                <>
+                  <h2 style={{ marginTop: 14 }}>Crowd <small>high-band energy vs the recent baseline · fires at z ≥ 4</small></h2>
+                  <div className="roar" data-explain="crowd"><i style={{ width: `${Math.min(100, Math.max(0, lastCrowd.z / 8) * 100)}%` }} /></div>
+                </>
+              )}
               {lastCrowd?.pAudio !== null && lastCrowd?.pAudio !== undefined && (
                 <>
                   <h2 style={{ marginTop: 14 }}>Audio goal model <small>learned from 500 broadcasts · P(goal in the last 6 s)</small></h2>

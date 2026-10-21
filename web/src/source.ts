@@ -6,3 +6,5 @@ export const REPO_URL = 'https://github.com/srishti-h/audio-courtsider'
 
 export const demoFile = (match: string, goal: number, feedDelay: number, guard: boolean) =>
   `${BASE}demo/${match}__goal${goal}__fd${feedDelay}__${guard ? 'guard' : 'plain'}.json`
+// in-browser Live mode weights (scripts/export_web_models.py); VITE_MODELS_URL points at their published host
+export const MODELS_URL: string = import.meta.env.VITE_MODELS_URL ?? `${BASE}models/`
