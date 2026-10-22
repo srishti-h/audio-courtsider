@@ -69,7 +69,8 @@ def run_one(args: tuple[str, dict, float]) -> dict:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 4) - 2))
+    # capped: every worker holds its own copy of the tables, and more exhausted RAM
+    ap.add_argument("--workers", type=int, default=min(4, max(1, (os.cpu_count() or 4) - 2)))
     ap.add_argument("--max-games", type=int, default=0)
     args = ap.parse_args()
     FIG.mkdir(exist_ok=True)

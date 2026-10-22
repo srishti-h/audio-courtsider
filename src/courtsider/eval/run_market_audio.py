@@ -78,7 +78,8 @@ def main() -> None:
     games = [g for g in _S["games"][(_S["games"].split == "test") & _S["games"].fd_home.notna()].game_id if g in have]
     jobs = [(g, src, fd) for g in games for src in SOURCES for fd in FEED_DELAYS]
     print(f"{len(games)} matches, {len(jobs)} simulations", flush=True)
-    with ProcessPoolExecutor(max(1, (os.cpu_count() or 4) - 2), initializer=_init) as pool:
+    # capped: every worker holds its own copy of the tables, and more exhausted RAM
+    with ProcessPoolExecutor(min(4, max(1, (os.cpu_count() or 4) - 2)), initializer=_init) as pool:
         df = pd.DataFrame(list(pool.map(run_one, jobs, chunksize=4)))
     piv = df.pivot_table(index=["game_id", "feed_delay"], columns="source", values="cs_pnl")
     summary = (

@@ -25,6 +25,8 @@ jobs:
       - run: npm ci
         working-directory: web
       - run: npm run build:pages   # static mode: replays pre-computed tapes from web/public/demo
+        env:
+          VITE_MODELS_URL: https://huggingface.co/srishtih/audio-courtsider-web/resolve/main/  # in-browser Live mode weights
         working-directory: web
       - uses: actions/upload-pages-artifact@v3
         with:
