@@ -64,21 +64,21 @@ def espn_events(t0: float, t1: float) -> pd.DataFrame:
     return pd.DataFrame(rows).drop_duplicates(["match_id", "event", "wall"]) if rows else pd.DataFrame()
 
 
-def delay_hits(segs: pd.DataFrame, goal_audio_at) -> np.ndarray:
-    """For each candidate delay in DELAYS: how many ESPN goals have a transcript goal call next to them."""
+def delay_hits(segs: pd.DataFrame, goal_audio_at, delays: np.ndarray = DELAYS) -> np.ndarray:
+    """For each candidate delay: how many ESPN goals have a transcript goal call next to them."""
     calls = segs[segs.text.str.contains(GOAL_CALL)].audio_start.to_numpy()
     out = []
-    for d in DELAYS:
+    for d in delays:
         a = goal_audio_at(d)
         out.append(sum(bool(((calls >= t - LOOKBACK) & (calls <= t + LOOKAHEAD["goal"])).any()) for t in a))
     return np.array(out)
 
 
-def best_delay(hits: np.ndarray, goals: int) -> float:
+def best_delay(hits: np.ndarray, goals: int, delays: np.ndarray = DELAYS, default: float | None = DEFAULT_DELAY):
     """Middle of the best-scoring plateau (the window makes a range of shifts score equally)."""
     if goals < 3 or hits.max() < 2:
-        return DEFAULT_DELAY
-    return float(np.median(DELAYS[hits == hits.max()]))
+        return default
+    return float(np.median(delays[hits == hits.max()]))
 
 
 def build() -> tuple[pd.DataFrame, pd.DataFrame, list[dict]]:

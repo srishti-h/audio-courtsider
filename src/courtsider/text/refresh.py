@@ -43,6 +43,12 @@ def radio_rows() -> pd.DataFrame:
     return pd.read_parquet(path).assign(source="radio") if path.exists() else pd.DataFrame()
 
 
+def podcast_rows() -> pd.DataFrame:
+    """Aligned SER podcast broadcasts (data.podcasts): training data only; the recorder's radio stays the test."""
+    path = PROCESSED / "podcast_segments.parquet"
+    return pd.read_parquet(path).query("split == 'train'").assign(source="podcast") if path.exists() else pd.DataFrame()
+
+
 def price_ap(m: dict) -> float:
     return float(np.mean([m[e]["avg_precision"] for e in PRICE_MOVING if e in m]))
 
@@ -91,13 +97,15 @@ def eval_data() -> tuple[pd.DataFrame, pd.DataFrame]:
 
 
 def training_set(neg_frac: float, rare_oversample: int, per_source: int) -> pd.DataFrame:
-    df, espn, radio = load_labelled(), espn_rows(), radio_rows()
+    df, espn, radio, podcast = load_labelled(), espn_rows(), radio_rows(), podcast_rows()
     cols = ["input", "team", *EVENT_TYPES]
     parts = [df[df.split == "train"].assign(source="soccernet")[cols + ["source"]]]
     if len(espn):
         parts.append(espn[cols + ["source"]])
     if len(radio):
         parts.append(radio[radio.split == "train"][cols + ["source"]])
+    if len(podcast):
+        parts.append(podcast[cols + ["source"]])
     train = pd.concat(parts, ignore_index=True)
     rng = np.random.default_rng(0)  # same sampling recipe as text.train
     keep = (

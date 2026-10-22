@@ -110,7 +110,15 @@ def train(
         x = normalise(np.load(h["path"]))
         if len(x) >= int(CROP_S * FPS):  # a few broadcasts are truncated to seconds of audio
             n = len(x)
-            data.append((x, labels(n, h["goals"], window), h["goals"], onset_weights(n, h["goals"], onset_weight)))
+            # float16 in memory (float32 per batch): 531 halves of float32 features took ~36 GB of RAM
+            data.append(
+                (
+                    x.astype(np.float16),
+                    labels(n, h["goals"], window),
+                    h["goals"],
+                    onset_weights(n, h["goals"], onset_weight),
+                )
+            )
     print(f"training on {len(data)} halves", flush=True)
     model = CausalTCN().to(dev)
     opt = torch.optim.AdamW(model.parameters(), lr=2e-3, weight_decay=1e-4)
@@ -132,7 +140,7 @@ def train(
                 xb.append(x[c : c + crop])
                 yb.append(y[c : c + crop])
                 wb.append(w[c : c + crop])
-            xb = torch.tensor(np.stack(xb), device=dev)
+            xb = torch.tensor(np.stack(xb).astype(np.float32), device=dev)
             yb = torch.tensor(np.stack(yb), device=dev)
             wb = torch.tensor(np.stack(wb), device=dev)
             logits = model(xb)[:, rf:]  # skip the warm-up frames without full context
@@ -239,9 +247,9 @@ def main() -> None:
     tr, va, te = load_split("train"), load_split("valid"), load_split("test")
     radio_tr, radio_te = [], []
     if args.radio:
-        from courtsider.data import radio
+        from courtsider.data import podcasts, radio
 
-        radio_tr, radio_te = radio.audio_halves("train"), radio.audio_halves("test")
+        radio_tr, radio_te = radio.audio_halves("train") + podcasts.audio_halves("train"), radio.audio_halves("test")
         n = sum(len(h["goals"]) for h in radio_tr)
         if n < args.min_radio_goals:
             print(f"only {n} labelled radio goals with features (need {args.min_radio_goals}); training without radio")

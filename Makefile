@@ -47,6 +47,7 @@ refresh:          ## pull recent data (football-data, ESPN 2025/26+, recorded ra
 	uv run python -m courtsider.data.build
 	uv run python -m courtsider.data.espn
 	uv run python -m courtsider.data.radio
+	uv run python -m courtsider.data.podcasts   # downloads + transcribes new SER broadcasts (slow the first time)
 	uv run python -m courtsider.text.refresh
 	uv run python -m courtsider.acoustic.goal_model --radio
 	uv run python -m courtsider.eval.run_pricing

@@ -115,7 +115,16 @@ def key_events(s: dict) -> list[dict]:
         wall = datetime.fromisoformat(k["wallclock"].replace("Z", "+00:00")).timestamp()
         for e in ev:
             out.append(
-                dict(event=e, wall=wall, team=_side(k, home, away), home=home, away=away, text=k.get("text", ""))
+                dict(
+                    event=e,
+                    wall=wall,
+                    clock=float((k.get("clock") or {}).get("value") or 0),  # match-clock seconds
+                    period=int((k.get("period") or {}).get("number") or 0),
+                    team=_side(k, home, away),
+                    home=home,
+                    away=away,
+                    text=k.get("text", ""),
+                )
             )
     return out
 

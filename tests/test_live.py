@@ -174,3 +174,16 @@ def test_lead_report_anchors_on_the_real_goal_time(monkeypatch):
     ]
     g = report.summarize(events)["goals"][0]
     assert g["text_lead_s"] == 56.0 and g["text_after_goal_s"] == 4.0 and g["match"] == "H vs A"
+
+
+def test_podcast_alignment_finds_where_kickoff_falls():
+    import numpy as np
+    import pandas as pd
+
+    from courtsider.data import podcasts
+
+    ev = pd.DataFrame(dict(event=["goal", "goal", "goal"], t=[600.0, 1500.0, 2400.0]))  # match-clock seconds
+    segs = pd.DataFrame(dict(audio_start=np.r_[ev.t + 312, 100.0], text=["GOOOL!", "goal by Raphinha", "he scores", "a pass"]))
+    off, matched, n = podcasts.align(segs, ev)  # the episode started 312 s before kick-off
+    assert abs(off - 312) <= 3 and matched == 3 and n == 3
+    assert podcasts.align(segs.iloc[3:], ev)[0] is None  # no calls: not confident, skipped
