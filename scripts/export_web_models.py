@@ -131,7 +131,8 @@ def export_audio() -> dict:
 
 
 def main() -> None:
-    shutil.rmtree(OUT, ignore_errors=True)
+    for sub in ("text", "audio"):  # keep README.md, the Hugging Face model card
+        shutil.rmtree(OUT / sub, ignore_errors=True)
     export_text()
     meta = dict(event_types=EVENT_TYPES, team_classes=list(TEAM_CLASSES), max_len=96, audio=export_audio())
     (OUT / "meta.json").write_text(json.dumps(meta))
