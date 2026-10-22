@@ -102,7 +102,8 @@ def transcribe_and_features(ep: dict) -> pd.DataFrame:
         from courtsider.asr.streaming import MODELS as WHISPER
 
         mx.set_cache_limit(1 << 30)  # see asr.streaming: MLX's buffer cache is otherwise unbounded
-        y = decode(download(ep))
+        mp3 = download(ep)
+        y = decode(mp3)
         res = mlx_whisper.transcribe(
             y, path_or_hf_repo=WHISPER["small"], language="es", task="translate", condition_on_previous_text=False
         )
@@ -112,6 +113,7 @@ def transcribe_and_features(ep: dict) -> pd.DataFrame:
         )
         mpath.parent.mkdir(parents=True, exist_ok=True)
         np.save(mpath, log_mel(y))
+        mp3.unlink()  # transcript + features are all that is kept; the broadcast audio is not
     return pd.DataFrame(json.loads(tpath.read_text())).rename(columns={"start": "audio_start", "end": "audio_end"})
 
 
