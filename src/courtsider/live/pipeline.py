@@ -41,10 +41,11 @@ class Segmenter:
 
 
 class AudioGoalDetector:
-    """The learned causal crowd/commentator goal detector (acoustic.goal_model), applied to recent audio."""
+    """The learned causal crowd/commentator goal detectors (acoustic.goal_model), applied to recent audio.
+    With the fast detector trained too, P(goal) is the higher of the two calibrated probabilities."""
 
-    def __init__(self, model, calibrator, threshold: float):
-        self.model, self.calibrator, self.threshold = model, calibrator, threshold
+    def __init__(self, models: list, threshold: float):
+        self.models, self.threshold = models, threshold  # [(net, calibrator), ...]
 
     @classmethod
     def load(cls) -> AudioGoalDetector | None:
@@ -53,16 +54,21 @@ class AudioGoalDetector:
 
         import torch
 
-        from courtsider.acoustic.goal_model import CausalTCN, _device
+        from courtsider.acoustic.goal_model import DETECTORS, CausalTCN, _device
         from courtsider.paths import MODELS, RESULTS
 
-        w, c, r = MODELS / "audio_goal_tcn.pt", MODELS / "audio_goal_calibrator.pkl", RESULTS / "audio_goal.json"
-        if not (w.exists() and c.exists() and r.exists()):
+        r = RESULTS / "audio_goal.json"
+        models = []
+        for d in DETECTORS.values():
+            w, c = MODELS / f"audio_goal_tcn{d['file']}.pt", MODELS / f"audio_goal_calibrator{d['file']}.pkl"
+            if w.exists() and c.exists():
+                net = CausalTCN().to(_device())
+                net.load_state_dict(torch.load(w, map_location=_device()))
+                net.eval()
+                models.append((net, pickle.loads(c.read_bytes())))
+        if not models or not r.exists():
             return None
-        net = CausalTCN().to(_device())
-        net.load_state_dict(torch.load(w, map_location=_device()))
-        net.eval()
-        return cls(net, pickle.loads(c.read_bytes()), json.loads(r.read_text())["threshold_selected_on_valid"])
+        return cls(models, json.loads(r.read_text())["threshold_selected_on_valid"])
 
     def p_goal(self, audio: np.ndarray) -> float:
         import torch
@@ -70,10 +76,9 @@ class AudioGoalDetector:
         from courtsider.acoustic.extract import log_mel
         from courtsider.acoustic.goal_model import _device, normalise
 
-        x = normalise(log_mel(audio))
+        x = torch.tensor(normalise(log_mel(audio))[None], device=_device())
         with torch.no_grad():
-            raw = torch.sigmoid(self.model(torch.tensor(x[None], device=_device()))[0, -1]).item()
-        return float(self.calibrator.predict([raw])[0])
+            return max(float(cal.predict([torch.sigmoid(net(x)[0, -1]).item()])[0]) for net, cal in self.models)
 
 
 class LivePipeline:

@@ -205,11 +205,36 @@ def select(grid: list[dict]) -> dict:
 THRESHOLDS = (0.03, 0.05, 0.07, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7)
 
 
+# Two detectors whose signals are combined (either firing counts): the main one catches more goals,
+# the fast one (short target window, early frames up-weighted) fires first on the clearest ones. On
+# validation the pair was 20% faster at the median and earned the most across feed delays.
+DETECTORS = {
+    "main": dict(window=WINDOW, onset_weight=1.0, file=""),
+    "fast": dict(window=3.0, onset_weight=3.0, file="_fast"),
+}
+
+
+def calibrated(model: CausalTCN, halves: list[dict], iso) -> list[tuple[dict, np.ndarray, np.ndarray]]:
+    return [(h, t, iso.predict(p)) for h, t, p in ((h, *predict(model, h["path"])) for h in halves)]
+
+
+def combine(*tracks_by_detector: list) -> list:
+    """Either detector firing counts: the per-frame maximum of their calibrated probabilities."""
+    return [
+        (h, t, np.maximum.reduce([tr[i][2] for tr in tracks_by_detector]))
+        for i, (h, t, _) in enumerate(tracks_by_detector[0])
+    ]
+
+
 def main() -> None:
+    import pickle
+
+    from sklearn.isotonic import IsotonicRegression
+
     ap = argparse.ArgumentParser()
     ap.add_argument("--epochs", type=int, default=6)
     ap.add_argument("--radio", action="store_true", help="add logged live-radio features (data.radio) to training")
-    ap.add_argument("--min-radio-goals", type=int, default=30, help="with --radio: skip retraining below this")
+    ap.add_argument("--min-radio-goals", type=int, default=30, help="with --radio: radio is used only above this")
     args = ap.parse_args()
     tr, va, te = load_split("train"), load_split("valid"), load_split("test")
     radio_tr, radio_te = [], []
@@ -219,50 +244,49 @@ def main() -> None:
         radio_tr, radio_te = radio.audio_halves("train"), radio.audio_halves("test")
         n = sum(len(h["goals"]) for h in radio_tr)
         if n < args.min_radio_goals:
-            print(
-                f"only {n} labelled radio goals with features (need {args.min_radio_goals}); keeping the current model"
-            )
-            return
+            print(f"only {n} labelled radio goals with features (need {args.min_radio_goals}); training without radio")
+            radio_tr = []
         tr = tr + radio_tr
     print(f"halves: train {len(tr)} valid {len(va)} test {len(te)}", flush=True)
-    model = train(tr, args.epochs)
     MODELS.mkdir(exist_ok=True)
-    torch.save(model.state_dict(), MODELS / "audio_goal_tcn.pt")
-    va_raw = [(h, *predict(model, h["path"])) for h in va]
-    # isotonic calibration on validation frames: P(goal in the last WINDOW s | network output)
-    from sklearn.isotonic import IsotonicRegression
-
-    xs = np.concatenate([p[::5] for _, _, p in va_raw])
-    ys = np.concatenate([labels(len(p), h["goals"])[::5] for h, _, p in va_raw])
-    iso = IsotonicRegression(out_of_bounds="clip", y_min=0, y_max=1).fit(xs, ys)
-    import pickle
-
-    (MODELS / "audio_goal_calibrator.pkl").write_bytes(pickle.dumps(iso))
-    va_tracks = [(h, t, iso.predict(p)) for h, t, p in va_raw]
-    grid = [evaluate(va_tracks, th) for th in (0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7)]
-    f1 = lambda r: 2 * r["precision"] * r["recall"] / max(1e-9, r["precision"] + r["recall"])  # noqa: E731
-    best = max(grid, key=f1)
-    te_tracks = [(h, t, iso.predict(p)) for h, t, p in ((h, *predict(model, h["path"])) for h in te)]
-    test = {str(th): evaluate(te_tracks, th) for th in sorted({0.1, 0.2, 0.3, 0.5, best["threshold"]})}
+    va_tracks, te_tracks, rt_tracks, per_detector = [], [], [], {}
+    for name, d in DETECTORS.items():
+        model = train(tr, args.epochs, window=d["window"], onset_weight=d["onset_weight"])
+        torch.save(model.state_dict(), MODELS / f"audio_goal_tcn{d['file']}.pt")
+        va_raw = [(h, *predict(model, h["path"])) for h in va]
+        # isotonic calibration on validation frames: P(goal in the last `window` s | network output)
+        xs = np.concatenate([p[::5] for _, _, p in va_raw])
+        ys = np.concatenate([labels(len(p), h["goals"], d["window"])[::5] for h, _, p in va_raw])
+        iso = IsotonicRegression(out_of_bounds="clip", y_min=0, y_max=1).fit(xs, ys)
+        (MODELS / f"audio_goal_calibrator{d['file']}.pkl").write_bytes(pickle.dumps(iso))
+        va_tracks.append([(h, t, iso.predict(p)) for h, t, p in va_raw])
+        te_tracks.append(calibrated(model, te, iso))
+        if radio_te:
+            rt_tracks.append(calibrated(model, radio_te, iso))
+        per_detector[name] = dict(d, receptive_field_s=round(model.receptive_field / FPS, 2))
+    va_both, te_both = combine(*va_tracks), combine(*te_tracks)
+    grid = [evaluate(va_both, th) for th in THRESHOLDS]
+    best = select(grid)
     report = dict(
+        detectors=per_detector,
+        combined="either detector firing (per-frame max of calibrated probabilities)",
         threshold_selected_on_valid=best["threshold"],
+        false_alarm_budget_per_match=MAX_FA_PER_MATCH,
         valid_grid=grid,
-        test=test,
-        test_at_selected=evaluate(te_tracks, best["threshold"]),
+        test={str(th): evaluate(te_both, th) for th in sorted({0.2, 0.3, 0.5, best["threshold"]})},
+        test_at_selected=evaluate(te_both, best["threshold"]),
+        test_main_only_at_selected=evaluate(te_tracks[0], best["threshold"]),
         window_s=WINDOW,
-        receptive_field_s=round(model.receptive_field / FPS, 2),
         radio_train_goals=sum(len(h["goals"]) for h in radio_tr),
     )
-    if radio_te:  # 2026 radio, held out by time
-        rt = [(h, t, iso.predict(p)) for h, t, p in ((h, *predict(model, h["path"])) for h in radio_te)]
-        report["radio_2026_test"] = evaluate(rt, best["threshold"])
+    if rt_tracks:  # 2026 radio, held out by time
+        report["radio_2026_test"] = evaluate(combine(*rt_tracks), best["threshold"])
     (RESULTS / "audio_goal.json").write_text(json.dumps(report, indent=2))
     # probability tracks for the market simulation (test matches), downsampled to 10 Hz
-    rows = []
-    for h, t, p in te_tracks:
-        rows.append(
-            pd.DataFrame(dict(game_id=h["game_id"], half=h["half"], t=t[::5], p_goal=p[::5].astype(np.float32)))
-        )
+    rows = [
+        pd.DataFrame(dict(game_id=h["game_id"], half=h["half"], t=t[::5], p_goal=p[::5].astype(np.float32)))
+        for h, t, p in te_both
+    ]
     pd.concat(rows).to_parquet(PROCESSED / "audio_goal_tracks.parquet")
     print(json.dumps(report["test_at_selected"], indent=1))
 

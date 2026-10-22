@@ -26,7 +26,7 @@ export interface StartOptions {
 const post = (events: any[]) => events.length && self.postMessage({ type: 'events', events })
 const now = () => Date.now() / 1000
 
-let asr: any, tok: any, textModel: ort.InferenceSession, audioModel: ort.InferenceSession | null = null
+let asr: any, tok: any, textModel: ort.InferenceSession, audioModels: { sess: ort.InferenceSession; calibrator: { x: number[]; y: number[] } }[] = []
 let meta: any, fb: Float32Array
 let opts: StartOptions
 let buf = new Float32Array(0), bufStart = 0, total = 0, recent = new Float32Array(0)
@@ -49,9 +49,12 @@ async function load(o: StartOptions) {
   textModel = await ort.InferenceSession.create(`${o.modelsUrl}text/model.onnx`, { executionProviders: ['wasm'] })
   self.postMessage({ type: 'loading', what: 'audio model' })
   try { // the audio model is optional: only present when its weights are published
-    audioModel = await ort.InferenceSession.create(`${o.modelsUrl}audio/model.onnx`, { executionProviders: ['wasm'] })
+    // main + fast: either firing counts (the higher probability); older exports had one model + calibrator
+    for (const d of meta.audio.detectors ?? [{ file: 'model.onnx', calibrator: meta.audio.calibrator }]) {
+      audioModels.push({ sess: await ort.InferenceSession.create(`${o.modelsUrl}audio/${d.file}`, { executionProviders: ['wasm'] }), calibrator: d.calibrator })
+    }
     fb = new Float32Array(await (await fetch(`${o.modelsUrl}audio/mel.bin`)).arrayBuffer())
-  } catch { audioModel = null }
+  } catch { audioModels = [] }
   self.postMessage({ type: 'loading', what: `Whisper ${o.whisper}` })
   asr = await pipeline('automatic-speech-recognition', `onnx-community/whisper-${o.whisper}`, {
     device: gpu ? 'webgpu' : 'wasm',
@@ -137,7 +140,7 @@ async function tick() {
       const { probs, team } = await score([input(tail)])
       events.push({ kind: 'partial', wall, text: tail, p_goal: probs[0][0] }, ...fire(probs[0], team[0], tail, wall, 'text-fast'))
     }
-    if (audioModel && recent.length >= 3 * SR) events.push(...(await acoustic(wall)))
+    if (audioModels.length && recent.length >= 3 * SR) events.push(...(await acoustic(wall)))
     events.push({ kind: 'status', wall, audio_seconds: total / SR })
     post(events)
   } catch (e: any) {
@@ -149,9 +152,12 @@ async function acoustic(wall: number): Promise<any[]> {
   const a: MelConfig & any = meta.audio
   const mel = logMel(recent, fb, a)
   const x = normalise(mel, a)
-  const out = await audioModel!.run({ mel: new ort.Tensor('float32', x, [1, mel.length, a.n_mels * 2]) })
-  const logits = out.logits.data as Float32Array
-  const p = calibrate(1 / (1 + Math.exp(-logits[logits.length - 1])), a.calibrator.x, a.calibrator.y)
+  let p = 0
+  for (const m of audioModels) {
+    const out = await m.sess.run({ mel: new ort.Tensor('float32', x, [1, mel.length, a.n_mels * 2]) })
+    const logits = out.logits.data as Float32Array
+    p = Math.max(p, calibrate(1 / (1 + Math.exp(-logits[logits.length - 1])), m.calibrator.x, m.calibrator.y))
+  }
   const events: any[] = [{ kind: 'acoustic', wall, crowd_z: null, excitement: null, p_goal_audio: Math.round(p * 1e4) / 1e4 }]
   if (p >= a.threshold && wall - (lastFire.audio ?? -1e9) > REFRACTORY_S) {
     lastFire.audio = wall
@@ -184,7 +190,7 @@ self.onmessage = async (m: MessageEvent) => {
       }
       running = true
       post([{ kind: 'session', wall: now(), home: opts.home, away: opts.away, match_id: opts.matchId, feed: 'espn', vocabulary: [], score: snap?.score ?? null, clock: snap?.clock ?? null }])
-      self.postMessage({ type: 'ready', gpu, audioModel: !!audioModel })
+      self.postMessage({ type: 'ready', gpu, audioModel: audioModels.length > 0 })
       if (snap) watchFeed(snap)
       timers.push(self.setInterval(tick, TICK_MS))
     } catch (e: any) {
