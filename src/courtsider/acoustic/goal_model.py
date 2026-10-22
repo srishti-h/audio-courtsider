@@ -210,7 +210,7 @@ def select(grid: list[dict]) -> dict:
     return min(ok or grid, key=lambda r: r["delay_p50"] if r["delay_p50"] is not None else 1e9)
 
 
-THRESHOLDS = (0.03, 0.05, 0.07, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7)
+THRESHOLDS = (0.03, 0.05, 0.07, 0.1, 0.15, 0.2, 0.3, 0.35, 0.4, 0.42, 0.44, 0.46, 0.48, 0.5, 0.6, 0.7)
 
 
 # Two detectors whose signals are combined (either firing counts): the main one catches more goals,
@@ -243,6 +243,7 @@ def main() -> None:
     ap.add_argument("--epochs", type=int, default=6)
     ap.add_argument("--radio", action="store_true", help="add logged live-radio features (data.radio) to training")
     ap.add_argument("--min-radio-goals", type=int, default=30, help="with --radio: radio is used only above this")
+    ap.add_argument("--eval-only", action="store_true", help="re-evaluate the saved detectors without training")
     args = ap.parse_args()
     tr, va, te = load_split("train"), load_split("valid"), load_split("test")
     radio_tr, radio_te = [], []
@@ -259,8 +260,12 @@ def main() -> None:
     MODELS.mkdir(exist_ok=True)
     va_tracks, te_tracks, rt_tracks, per_detector = [], [], [], {}
     for name, d in DETECTORS.items():
-        model = train(tr, args.epochs, window=d["window"], onset_weight=d["onset_weight"])
-        torch.save(model.state_dict(), MODELS / f"audio_goal_tcn{d['file']}.pt")
+        if args.eval_only:
+            model = CausalTCN().to(_device())
+            model.load_state_dict(torch.load(MODELS / f"audio_goal_tcn{d['file']}.pt", map_location=_device()))
+        else:
+            model = train(tr, args.epochs, window=d["window"], onset_weight=d["onset_weight"])
+            torch.save(model.state_dict(), MODELS / f"audio_goal_tcn{d['file']}.pt")
         va_raw = [(h, *predict(model, h["path"])) for h in va]
         # isotonic calibration on validation frames: P(goal in the last `window` s | network output)
         xs = np.concatenate([p[::5] for _, _, p in va_raw])
