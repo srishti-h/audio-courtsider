@@ -248,9 +248,11 @@ def main() -> None:
     tr, va, te = load_split("train"), load_split("valid"), load_split("test")
     radio_tr, radio_te = [], []
     if args.radio:
-        from courtsider.data import podcasts, radio
+        from courtsider.data import radio
 
-        radio_tr, radio_te = radio.audio_halves("train") + podcasts.audio_halves("train"), radio.audio_halves("test")
+        # recorder radio only: podcasts align to ESPN goals within about +-5 s (data.podcasts), too coarse
+        # for a target of "a goal in the last few seconds"; they train the text model instead
+        radio_tr, radio_te = radio.audio_halves("train"), radio.audio_halves("test")
         n = sum(len(h["goals"]) for h in radio_tr)
         if n < args.min_radio_goals:
             print(f"only {n} labelled radio goals with features (need {args.min_radio_goals}); training without radio")

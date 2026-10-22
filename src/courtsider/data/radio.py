@@ -75,10 +75,14 @@ def delay_hits(segs: pd.DataFrame, goal_audio_at, delays: np.ndarray = DELAYS) -
 
 
 def best_delay(hits: np.ndarray, goals: int, delays: np.ndarray = DELAYS, default: float | None = DEFAULT_DELAY):
-    """Middle of the best-scoring plateau (the window makes a range of shifts score equally)."""
+    """Middle of the widest best-scoring plateau (the window makes a range of shifts score equally; the
+    middle of several separate plateaus could land between them on a shift that scores worse)."""
     if goals < 3 or hits.max() < 2:
         return default
-    return float(np.median(delays[hits == hits.max()]))
+    best = np.flatnonzero(hits == hits.max())
+    runs = np.split(best, np.flatnonzero(np.diff(best) > 1) + 1)
+    widest = max(runs, key=len)
+    return float(delays[widest[len(widest) // 2]])
 
 
 def build() -> tuple[pd.DataFrame, pd.DataFrame, list[dict]]:

@@ -8,7 +8,9 @@ C - D | 1ª Parte / 2ª Parte" (about 50 min per half, back to Dec 2025). For ea
   4. estimates where the episode starts relative to kick-off: the offset that lines up the most ESPN
      goals with a goal call in the transcript (data.radio's alignment, over a wider range),
   5. labels transcript segments and audio frames exactly like the recorded radio.
-Episodes whose alignment is not confident (fewer than 2 goals matched) are skipped.
+Episodes whose alignment is not confident (fewer than 2 goals matched) are skipped. Alignment is good to
+about +-5 s (a goal call may sit anywhere in the labelling window), so podcasts train the text model,
+whose segment labels tolerate that, and not the audio model.
 """
 
 from __future__ import annotations
@@ -189,20 +191,6 @@ def build(limit: int | None = None, only: str | None = None) -> list[dict]:
         events.to_parquet(PROCESSED / "podcast_events.parquet")
     (RESULTS / "podcast_alignment.json").write_text(json.dumps(report, indent=2, default=str))
     return report
-
-
-def audio_halves(split: str) -> list[dict]:
-    """Episodes as training halves for acoustic.goal_model (features start at the episode start)."""
-    path = PROCESSED / "podcast_events.parquet"
-    if not path.exists():
-        return []
-    ev = pd.read_parquet(path)
-    ev = ev[ev.split == split]
-    return [
-        dict(game_id=g, half=1, path=ROOT / "mel" / f"{g}.npy", goals=np.sort(e[e.event == "goal"].g.to_numpy()))
-        for g, e in ev.groupby("game_id")
-        if (ROOT / "mel" / f"{g}.npy").exists()
-    ]
 
 
 def main() -> None:

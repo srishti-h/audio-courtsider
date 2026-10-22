@@ -183,7 +183,21 @@ def test_podcast_alignment_finds_where_kickoff_falls():
     from courtsider.data import podcasts
 
     ev = pd.DataFrame(dict(event=["goal", "goal", "goal"], t=[600.0, 1500.0, 2400.0]))  # match-clock seconds
-    segs = pd.DataFrame(dict(audio_start=np.r_[ev.t + 312, 100.0], text=["GOOOL!", "goal by Raphinha", "he scores", "a pass"]))
+    segs = pd.DataFrame(
+        dict(audio_start=np.r_[ev.t + 312, 100.0], text=["GOOOL!", "goal by Raphinha", "he scores", "a pass"])
+    )
     off, matched, n = podcasts.align(segs, ev)  # the episode started 312 s before kick-off
     assert abs(off - 312) <= 3 and matched == 3 and n == 3
     assert podcasts.align(segs.iloc[3:], ev)[0] is None  # no calls: not confident, skipped
+
+
+def test_best_delay_never_lands_between_two_plateaus():
+    import numpy as np
+
+    from courtsider.data import radio
+
+    delays = np.arange(0.0, 100.0)
+    hits = np.zeros(100, int)
+    hits[10:30] = 2  # wide plateau
+    hits[80:85] = 2  # narrow one far away; the old median of both fell at ~27, the new answer is 20
+    assert radio.best_delay(hits, 3, delays) == 20.0
