@@ -182,9 +182,10 @@ def test_podcast_alignment_finds_where_kickoff_falls():
 
     from courtsider.data import podcasts
 
-    ev = pd.DataFrame(dict(event=["goal", "goal", "goal"], t=[600.0, 1500.0, 2400.0]))  # match-clock seconds
+    # one goal and two bookings: goals alone would be too few to anchor the half
+    ev = pd.DataFrame(dict(event=["goal", "yellow_card", "yellow_card"], t=[600.0, 1500.0, 2400.0]))
     segs = pd.DataFrame(
-        dict(audio_start=np.r_[ev.t + 312, 100.0], text=["GOOOL!", "goal by Raphinha", "he scores", "a pass"])
+        dict(audio_start=np.r_[ev.t + 312, 100.0], text=["GOOOL!", "yellow card for Gavi", "Pedri is booked", "a pass"])
     )
     off, matched, n = podcasts.align(segs, ev)  # the episode started 312 s before kick-off
     assert abs(off - 312) <= 3 and matched == 3 and n == 3

@@ -4,11 +4,11 @@ SER publishes each Champions League / La Liga radio broadcast as "Los Partidos d
 C - D | 1ª Parte / 2ª Parte" (about 50 min per half, back to Dec 2025). For each half this:
   1. downloads the episode (kept locally, never redistributed),
   2. transcribes it with Whisper (Spanish -> English) and stores log-mel features for the audio model,
-  3. finds ESPN's goals for the matches named in the title (match-clock times within the half),
+  3. finds ESPN's key events for the matches named in the title (match-clock times within the half),
   4. estimates where the episode starts relative to kick-off: the offset that lines up the most ESPN
-     goals with a goal call in the transcript (data.radio's alignment, over a wider range),
+     goals, cards and substitutions with the commentary announcing them (data.radio's alignment),
   5. labels transcript segments and audio frames exactly like the recorded radio.
-Episodes whose alignment is not confident (fewer than 2 goals matched) are skipped. Alignment is good to
+Episodes where fewer than 3 events line up are skipped. Alignment is good to
 about +-5 s (a goal call may sit anywhere in the labelling window), so podcasts train the text model,
 whose segment labels tolerate that, and not the audio model.
 """
@@ -117,8 +117,21 @@ def transcribe_and_features(ep: dict) -> pd.DataFrame:
     return pd.DataFrame(json.loads(tpath.read_text())).rename(columns={"start": "audio_start", "end": "audio_end"})
 
 
-def espn_goals(ep: dict) -> pd.DataFrame:
-    """ESPN price-moving events of the matches named in the title, timed on this half's match clock."""
+# Events commentators announce, used to find where kick-off falls (labels still come from all of them).
+# Goals alone are often too few, so cards help. Substitutions don't: the translated commentary rarely
+# says "comes on"/"replaces" (0 of 18 matched at the true offset in the pilot) and their chance hits
+# outvoted the goals.
+ANCHORS = {
+    "goal": radio.GOAL_CALL,
+    "yellow_card": re.compile(r"yellow card|\bbooked\b|\bcaution", re.I),
+    "red_card": re.compile(r"red card|sent off|\bexpelled", re.I),
+}
+MIN_MATCHED = 3
+
+
+def espn_events(ep: dict) -> pd.DataFrame:
+    """ESPN key events (goals, cards, penalties, substitutions) of the matches named in the title,
+    timed on this half's match clock."""
     rows = []
     for league in LEAGUES:
         for day in (ep["day"] - timedelta(1), ep["day"]):
@@ -129,19 +142,37 @@ def espn_goals(ep: dict) -> pd.DataFrame:
                 home, away = espn.teams(s)
                 if not any(fuzz.WRatio(a, home) + fuzz.WRatio(b, away) >= 150 for a, b in ep["matches"]):
                     continue
-                for e in espn.key_events(s):
-                    if e["period"] == ep["half"]:
-                        rows.append(dict(e, match_id=m["id"], t=e["clock"] - (ep["half"] - 1) * HALF_S))
+                for k in s.get("keyEvents") or []:
+                    if int((k.get("period") or {}).get("number") or 0) != ep["half"]:
+                        continue
+                    clock = float((k.get("clock") or {}).get("value") or 0)
+                    for e in espn.events_of(k["type"]["text"], k.get("text", "")) - {"shot"}:
+                        team = espn._side(k, home, away) if e in ("goal", "red_card", "penalty") else "unknown"
+                        rows.append(
+                            dict(
+                                event=e,
+                                clock=clock,
+                                t=clock - (ep["half"] - 1) * HALF_S,
+                                match_id=m["id"],
+                                team=team,
+                                home=home,
+                                away=away,
+                            )
+                        )
     return pd.DataFrame(rows).drop_duplicates(["match_id", "event", "clock"]) if rows else pd.DataFrame()
 
 
 def align(segs: pd.DataFrame, ev: pd.DataFrame) -> tuple[float | None, int, int]:
-    """Episode time of kick-off -> (offset or None if not confident, goals matched, goals)."""
-    goals = ev[ev.event == "goal"].t.to_numpy() if len(ev) else np.zeros(0)
-    hits = radio.delay_hits(segs, lambda d: goals + d, OFFSETS)
-    off = radio.best_delay(hits, len(goals), OFFSETS, default=None)
+    """Episode time of kick-off -> (offset or None if not confident, anchors matched, anchors)."""
+    hits, n = np.zeros(len(OFFSETS), int), 0
+    for event, pattern in ANCHORS.items():
+        t = ev[ev.event == event].t.to_numpy() if len(ev) else np.zeros(0)
+        if len(t):
+            hits += radio.delay_hits(segs, lambda d, t=t: t + d, OFFSETS, pattern)
+            n += len(t)
+    off = radio.best_delay(hits, n, OFFSETS, default=None)
     matched = int(hits[np.abs(OFFSETS - off).argmin()]) if off is not None else int(hits.max(initial=0))
-    return off, matched, len(goals)
+    return (off if matched >= MIN_MATCHED else None), matched, n
 
 
 def build(limit: int | None = None, only: str | None = None) -> list[dict]:
@@ -150,9 +181,9 @@ def build(limit: int | None = None, only: str | None = None) -> list[dict]:
     n_test = max(1, round(radio.TEST_FRACTION * len(eps)))
     for i, ep in enumerate(sorted(eps, key=lambda e: (e["day"], e["half"]))):
         segs = transcribe_and_features(ep)
-        ev = espn_goals(ep)
+        ev = espn_events(ep)
         off, matched, n = align(segs, ev) if len(ev) else (None, 0, 0)
-        report.append(dict(episode=ep["slug"], goals=n, goals_matched=matched, kickoff_at_s=off))
+        report.append(dict(episode=ep["slug"], anchors=n, matched=matched, kickoff_at_s=off))
         print(report[-1], flush=True)
         if off is None:
             continue
@@ -202,7 +233,7 @@ def main() -> None:
     args = ap.parse_args()
     rep = build(args.limit, args.only)
     ok = [r for r in rep if r["kickoff_at_s"] is not None]
-    print(f"{len(ok)}/{len(rep)} episodes aligned, {sum(r['goals_matched'] for r in ok)} goals matched")
+    print(f"{len(ok)}/{len(rep)} episodes aligned on {sum(r['matched'] for r in ok)} matched events")
 
 
 if __name__ == "__main__":

@@ -64,9 +64,9 @@ def espn_events(t0: float, t1: float) -> pd.DataFrame:
     return pd.DataFrame(rows).drop_duplicates(["match_id", "event", "wall"]) if rows else pd.DataFrame()
 
 
-def delay_hits(segs: pd.DataFrame, goal_audio_at, delays: np.ndarray = DELAYS) -> np.ndarray:
-    """For each candidate delay: how many ESPN goals have a transcript goal call next to them."""
-    calls = segs[segs.text.str.contains(GOAL_CALL)].audio_start.to_numpy()
+def delay_hits(segs: pd.DataFrame, goal_audio_at, delays: np.ndarray = DELAYS, pattern=GOAL_CALL) -> np.ndarray:
+    """For each candidate delay: how many ESPN events have a matching transcript call (goal calls by default)."""
+    calls = segs[segs.text.str.contains(pattern)].audio_start.to_numpy()
     out = []
     for d in delays:
         a = goal_audio_at(d)
