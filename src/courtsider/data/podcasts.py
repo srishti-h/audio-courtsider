@@ -69,15 +69,21 @@ def episodes() -> list[dict]:
 
 def download(ep: dict):
     path = ROOT / "audio" / f"{ep['slug']}.mp3"
-    if not path.exists():
-        path.parent.mkdir(parents=True, exist_ok=True)
-        with requests.get(ep["url"], headers=UA, timeout=120, stream=True) as r:
-            r.raise_for_status()
-            tmp = path.with_suffix(".part")
-            with tmp.open("wb") as f:
-                for chunk in r.iter_content(1 << 20):
-                    f.write(chunk)
-            tmp.rename(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    for attempt in range(3):  # the podcast CDN drops long downloads now and then
+        if path.exists():
+            break
+        try:
+            with requests.get(ep["url"], headers=UA, timeout=120, stream=True) as r:
+                r.raise_for_status()
+                tmp = path.with_suffix(".part")
+                with tmp.open("wb") as f:
+                    for chunk in r.iter_content(1 << 20):
+                        f.write(chunk)
+                tmp.rename(path)
+        except requests.RequestException:
+            if attempt == 2:
+                raise
     return path
 
 
@@ -180,7 +186,12 @@ def build(limit: int | None = None, only: str | None = None) -> list[dict]:
     report, seg_frames, ev_frames = [], [], []
     n_test = max(1, round(radio.TEST_FRACTION * len(eps)))
     for i, ep in enumerate(sorted(eps, key=lambda e: (e["day"], e["half"]))):
-        segs = transcribe_and_features(ep)
+        try:
+            segs = transcribe_and_features(ep)
+        except (requests.RequestException, subprocess.CalledProcessError) as e:  # one bad episode must not end the run
+            report.append(dict(episode=ep["slug"], error=str(e)[:200], kickoff_at_s=None))
+            print(report[-1], flush=True)
+            continue
         ev = espn_events(ep)
         off, matched, n = align(segs, ev) if len(ev) else (None, 0, 0)
         report.append(dict(episode=ep["slug"], anchors=n, matched=matched, kickoff_at_s=off))
