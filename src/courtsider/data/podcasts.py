@@ -19,6 +19,7 @@ import argparse
 import json
 import re
 import subprocess
+import time
 from datetime import timedelta
 from email.utils import parsedate_to_datetime
 from xml.etree import ElementTree as ET
@@ -38,6 +39,7 @@ ROOT = DATA / "raw" / "podcasts"
 OFFSETS = np.arange(-900.0, 900.5, 1.0)  # where kick-off falls in the episode, seconds
 HALF_S = 45 * 60
 UA = {"User-Agent": "Mozilla/5.0"}
+DOWNLOAD_DEADLINE_S = 600  # ~95 MB episodes normally take under a minute
 
 
 def episodes() -> list[dict]:
@@ -74,12 +76,15 @@ def download(ep: dict):
         if path.exists():
             break
         try:
-            with requests.get(ep["url"], headers=UA, timeout=120, stream=True) as r:
+            start = time.time()
+            with requests.get(ep["url"], headers=UA, timeout=60, stream=True) as r:
                 r.raise_for_status()
                 tmp = path.with_suffix(".part")
                 with tmp.open("wb") as f:
-                    for chunk in r.iter_content(1 << 20):
+                    for chunk in r.iter_content(1 << 16):
                         f.write(chunk)
+                        if time.time() - start > DOWNLOAD_DEADLINE_S:  # a trickling connection never times out
+                            raise requests.ConnectionError("download too slow")
                 tmp.rename(path)
         except requests.RequestException:
             if attempt == 2:
