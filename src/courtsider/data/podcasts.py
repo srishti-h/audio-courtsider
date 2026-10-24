@@ -19,7 +19,6 @@ import argparse
 import json
 import re
 import subprocess
-import time
 from datetime import timedelta
 from email.utils import parsedate_to_datetime
 from xml.etree import ElementTree as ET
@@ -39,7 +38,6 @@ ROOT = DATA / "raw" / "podcasts"
 OFFSETS = np.arange(-900.0, 900.5, 1.0)  # where kick-off falls in the episode, seconds
 HALF_S = 45 * 60
 UA = {"User-Agent": "Mozilla/5.0"}
-DOWNLOAD_DEADLINE_S = 600  # ~95 MB episodes normally take under a minute
 
 
 def episodes() -> list[dict]:
@@ -70,25 +68,34 @@ def episodes() -> list[dict]:
 
 
 def download(ep: dict):
+    """curl, not requests: the podcast CDN sometimes trickles a byte at a time, which a socket read timeout
+    never catches (a download sat for 20+ minutes); curl aborts below 20 kB/s for 30 s, retries 3 times."""
     path = ROOT / "audio" / f"{ep['slug']}.mp3"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    for attempt in range(3):  # the podcast CDN drops long downloads now and then
-        if path.exists():
-            break
-        try:
-            start = time.time()
-            with requests.get(ep["url"], headers=UA, timeout=60, stream=True) as r:
-                r.raise_for_status()
-                tmp = path.with_suffix(".part")
-                with tmp.open("wb") as f:
-                    for chunk in r.iter_content(1 << 16):
-                        f.write(chunk)
-                        if time.time() - start > DOWNLOAD_DEADLINE_S:  # a trickling connection never times out
-                            raise requests.ConnectionError("download too slow")
-                tmp.rename(path)
-        except requests.RequestException:
-            if attempt == 2:
-                raise
+    if not path.exists():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_suffix(".part")
+        subprocess.run(
+            [
+                "curl",
+                "-sSLf",
+                "--retry",
+                "3",
+                "--retry-all-errors",
+                "--speed-limit",
+                "20000",
+                "--speed-time",
+                "30",
+                "--max-time",
+                "900",
+                "-A",
+                UA["User-Agent"],
+                "-o",
+                str(tmp),
+                ep["url"],
+            ],
+            check=True,
+        )
+        tmp.rename(path)
     return path
 
 
