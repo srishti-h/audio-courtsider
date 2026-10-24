@@ -60,7 +60,7 @@ def episodes() -> list[dict]:
                 title=title,
                 day=day,
                 half=int(m.group(2)),
-                matches=[p.split(" - ") for p in pairs],
+                matches=[p.split(" - ", 1) for p in pairs],
                 url=it.find("enclosure").attrib["url"],
             )
         )
